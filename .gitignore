@@ -1,3 +1,9 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+
+# Local machine paths (Godot executable, MCP server) - not portable, not for sharing
+.mcp.json
+
+# Local web export output (CI builds and deploys this fresh)
+/build/

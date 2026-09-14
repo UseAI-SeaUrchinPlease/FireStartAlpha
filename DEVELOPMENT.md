@@ -265,6 +265,15 @@ MCP ツールで扱えないもの(`.tres` の中身、`project.godot` の細か
 
 `git init` 済み。マイルストーンごとに区切りのコミットを作る。
 
+### Web 公開(GitHub Pages)
+
+- `main`/`master` への push で `.github/workflows/deploy-web.yml` が動き、Godot の Web(HTML5)エクスポートを行って GitHub Pages にデプロイする(`actions/upload-pages-artifact` + `actions/deploy-pages`)。リポジトリの Settings → Pages で Source を「GitHub Actions」にする必要がある
+- Web エクスポートは Forward+ が使えないため、`project.godot` の `[rendering]` に `renderer/rendering_method.web="gl_compatibility"` を追加し、Web だけ Compatibility レンダラーを使うようにしている(デスクトップ / エディタは Forward+ のまま)
+- スレッド機能(`variant/thread_support`)は無効にしている。GitHub Pages はスレッド実行に必要な COOP/COEP ヘッダーをカスタム設定できないため
+- `export_presets.cfg` の `exclude_filter` で `tests/`, `tools/` を公開ビルドから除外している
+- ローカルで試す場合は Godot エディタの Export Templates を該当バージョン分インストールした上で `godot --headless --path . --export-release "Web" build/web/index.html`(`build/` は `.gitignore` 済み、CI が毎回作り直す)
+- `.mcp.json` はローカル環境固有のパス(Godot 実行ファイル、godot-mcp のインストール場所)を含むため `.gitignore` 対象。リポジトリに公開しない
+
 ---
 
 ## 6. ロードマップ
