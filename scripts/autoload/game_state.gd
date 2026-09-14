@@ -12,7 +12,7 @@ var hp: int = START_HP
 var max_hp: int = START_HP
 var fire_points: int = 0
 var inventory: Dictionary[ItemData, int] = {}
-var upgrade_levels: Dictionary[StringName, int] = {}
+var upgrades: Dictionary[UpgradeData, int] = {}
 
 
 func reset() -> void:
@@ -21,8 +21,9 @@ func reset() -> void:
 	hp = max_hp
 	fire_points = 0
 	inventory.clear()
-	upgrade_levels.clear()
+	upgrades.clear()
 	inventory_changed.emit()
+	hp_changed.emit()
 
 
 func advance_day() -> void:
@@ -34,12 +35,38 @@ func target_temperature() -> float:
 
 
 func attack_damage() -> int:
-	return 1 + upgrade_levels.get(&"attack", 0)
+	var total := 1
+	for upgrade: UpgradeData in upgrades:
+		total += upgrade.attack_bonus * upgrades[upgrade]
+	return total
 
 
-func damage(amount: int) -> void:
-	hp = maxi(hp - amount, 0)
+func dig_speed_multiplier() -> float:
+	var total := 1.0
+	for upgrade: UpgradeData in upgrades:
+		total += upgrade.dig_speed_bonus * upgrades[upgrade]
+	return total
+
+
+func upgrade_level(upgrade: UpgradeData) -> int:
+	return upgrades.get(upgrade, 0)
+
+
+func can_buy(upgrade: UpgradeData) -> bool:
+	if fire_points < upgrade.cost:
+		return false
+	return upgrade.max_level == 0 or upgrade_level(upgrade) < upgrade.max_level
+
+
+func buy_upgrade(upgrade: UpgradeData) -> bool:
+	if not can_buy(upgrade):
+		return false
+	fire_points -= upgrade.cost
+	upgrades[upgrade] = upgrade_level(upgrade) + 1
+	max_hp += upgrade.max_hp_bonus
+	hp = mini(hp + upgrade.max_hp_bonus + upgrade.heal, max_hp)
 	hp_changed.emit()
+	return true
 
 
 func add_item(item: ItemData, count: int = 1) -> void:
@@ -54,3 +81,8 @@ func remove_item(item: ItemData, count: int) -> void:
 	else:
 		inventory[item] = left
 	inventory_changed.emit()
+
+
+func damage(amount: int) -> void:
+	hp = maxi(hp - amount, 0)
+	hp_changed.emit()

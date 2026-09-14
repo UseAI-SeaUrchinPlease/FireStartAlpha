@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"dig"
+display_name = "採取スピード"
+description = "掘るのが 25% はやくなる"
+cost = 2
+max_level = 4
+dig_speed_bonus = 0.25

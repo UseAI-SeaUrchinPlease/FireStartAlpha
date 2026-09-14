@@ -64,7 +64,7 @@ func _update_dig(delta: float) -> void:
 	if cell != _dig_cell:
 		_dig_cell = cell
 		_dig_progress = 0.0
-	_dig_progress += delta
+	_dig_progress += delta * GameState.dig_speed_multiplier()
 	if _dig_progress >= block.hardness:
 		world.dig(cell)
 		_dig_progress = 0.0
