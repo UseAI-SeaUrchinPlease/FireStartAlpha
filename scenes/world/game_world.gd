@@ -47,6 +47,10 @@ func dig(cell: Vector2i) -> void:
 	block_dug.emit(cell, block)
 
 
+func contains(cell: Vector2i) -> bool:
+	return cell.x >= 0 and cell.y >= 0 and cell.x < map.width and cell.y < map.height
+
+
 func cell_at(world_position: Vector2) -> Vector2i:
 	return _blocks.local_to_map(_blocks.to_local(world_position))
 

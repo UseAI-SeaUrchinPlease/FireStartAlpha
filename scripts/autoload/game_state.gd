@@ -1,6 +1,7 @@
 extends Node
 
 signal inventory_changed
+signal hp_changed
 
 const START_HP := 10
 const BASE_TARGET_TEMPERATURE := 100.0
@@ -30,6 +31,15 @@ func advance_day() -> void:
 
 func target_temperature() -> float:
 	return BASE_TARGET_TEMPERATURE + TARGET_TEMPERATURE_PER_DAY * (day - 1)
+
+
+func attack_damage() -> int:
+	return 1 + upgrade_levels.get(&"attack", 0)
+
+
+func damage(amount: int) -> void:
+	hp = maxi(hp - amount, 0)
+	hp_changed.emit()
 
 
 func add_item(item: ItemData, count: int = 1) -> void:
