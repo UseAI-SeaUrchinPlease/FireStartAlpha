@@ -21,6 +21,7 @@ EventBus="*res://scripts/autoload/event_bus.gd"
 GameState="*res://scripts/autoload/game_state.gd"
 MetaProgress="*res://scripts/autoload/meta_progress.gd"
 PhaseManager="*res://scripts/autoload/phase_manager.gd"
+Audio="*res://scripts/autoload/audio.gd"
 
 [display]
 

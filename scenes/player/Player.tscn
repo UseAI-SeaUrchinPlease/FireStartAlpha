@@ -1,4 +1,4 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scenes/player/player.gd" id="1_script"]
 [ext_resource type="Texture2D" path="res://assets/sprites/player.png" id="2_texture"]
@@ -8,6 +8,12 @@ size = Vector2(12, 12)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_attack"]
 size = Vector2(16, 16)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dig_bg"]
+bg_color = Color(0.1, 0.1, 0.1, 0.8)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dig_fill"]
+bg_color = Color(1, 0.85, 0.3, 1)
 
 [node name="Player" type="CharacterBody2D"]
 collision_layer = 2
@@ -31,6 +37,16 @@ collision_mask = 4
 
 [node name="Shape" type="CollisionShape2D" parent="AttackArea"]
 shape = SubResource("RectangleShape2D_attack")
+
+[node name="DigBar" type="ProgressBar" parent="."]
+unique_name_in_owner = true
+visible = false
+offset_right = 16.0
+offset_bottom = 3.0
+theme_override_styles/background = SubResource("StyleBoxFlat_dig_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_dig_fill")
+max_value = 1.0
+show_percentage = false
 
 [node name="Camera" type="Camera2D" parent="."]
 unique_name_in_owner = true

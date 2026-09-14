@@ -10,6 +10,9 @@ const SPAWN_INTERVAL := 20.0
 const SPAWN_MIN_DISTANCE := 160.0
 const SPAWN_MAX_DISTANCE := 320.0
 const SPAWN_ATTEMPTS := 20
+const SUNSET_START := 0.55
+const SUNSET_COLOR := Color(0.9, 0.55, 0.35)
+const DUSK_COLOR := Color(0.4, 0.35, 0.55)
 
 @export var day_duration := 90.0
 
@@ -18,6 +21,7 @@ var _ended := false
 
 @onready var _world: GameWorld = %World
 @onready var _player: Player = %Player
+@onready var _daylight: CanvasModulate = %Daylight
 @onready var _day_timer: Timer = %DayTimer
 @onready var _spawn_timer: Timer = %SpawnTimer
 @onready var _time_label: Label = %TimeLabel
@@ -58,6 +62,7 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	_time_label.text = "%d" % ceili(_day_timer.time_left)
+	_daylight.color = _daylight_color(1.0 - _day_timer.time_left / day_duration)
 
 
 func enemy_count() -> int:
@@ -66,6 +71,15 @@ func enemy_count() -> int:
 		if child is Enemy:
 			count += 1
 	return count
+
+
+func _daylight_color(elapsed: float) -> Color:
+	if elapsed < SUNSET_START:
+		return Color.WHITE
+	var t := (elapsed - SUNSET_START) / (1.0 - SUNSET_START)
+	if t < 0.5:
+		return Color.WHITE.lerp(SUNSET_COLOR, t * 2.0)
+	return SUNSET_COLOR.lerp(DUSK_COLOR, (t - 0.5) * 2.0)
 
 
 func _spawn_enemy() -> void:
@@ -85,6 +99,7 @@ func _spawn_enemy() -> void:
 
 
 func _on_block_dug(cell: Vector2i, block: BlockData) -> void:
+	Audio.play(&"break")
 	if block.drop_item == null:
 		return
 	var pickup: ItemPickup = PICKUP_SCENE.instantiate()
@@ -108,6 +123,7 @@ func _on_day_timer_timeout() -> void:
 		return
 	_ended = true
 	_spawn_timer.stop()
+	Audio.play(&"sunset")
 	finish()
 
 

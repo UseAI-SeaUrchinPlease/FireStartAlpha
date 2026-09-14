@@ -11,4 +11,5 @@ func _ready() -> void:
 
 
 func _on_phase_changed(phase_name: StringName) -> void:
-	_phase_label.text = "Day %d - %s" % [GameState.day, phase_name]
+	_phase_label.visible = phase_name == &"DAY"
+	_phase_label.text = "%d日目" % GameState.day

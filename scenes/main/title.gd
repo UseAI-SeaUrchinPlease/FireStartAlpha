@@ -24,17 +24,21 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("move_down"):
 		set_focus(_focus + 1)
+		Audio.play(&"menu_move")
 	elif event.is_action_pressed("move_up"):
 		set_focus(_focus - 1)
+		Audio.play(&"menu_move")
 	elif event.is_action_pressed("interact"):
 		activate_focused()
 
 
 func activate_focused() -> void:
 	if _focus == 0:
+		Audio.play(&"menu_select")
 		finish()
 		return
 	if MetaProgress.buy_unlock(_unlocks[_focus - 1]):
+		Audio.play(&"pickup")
 		_refresh()
 
 

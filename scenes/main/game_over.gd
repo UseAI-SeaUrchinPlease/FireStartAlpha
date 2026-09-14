@@ -11,4 +11,5 @@ func _ready() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("interact"):
+		Audio.play(&"menu_select")
 		finish()

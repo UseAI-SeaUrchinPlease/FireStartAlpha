@@ -46,5 +46,8 @@ func take_damage(amount: int, from: Vector2) -> void:
 	_knockback_left = KNOCKBACK_DURATION
 	create_tween().tween_property(_sprite, "modulate", Color.WHITE, HIT_FLASH_DURATION).from(HIT_FLASH_COLOR)
 	if _hp <= 0:
+		Audio.play(&"enemy_die")
 		died.emit()
 		queue_free()
+	else:
+		Audio.play(&"enemy_hit")

@@ -3,6 +3,7 @@ extends CharacterBody2D
 
 const SPEED := 90.0
 const DIG_REACH := 12.0
+const DIG_BAR_OFFSET := Vector2(-8.0, -13.0)
 const ATTACK_REACH := 14.0
 const ATTACK_COOLDOWN := 0.4
 const INVULNERABLE_DURATION := 0.8
@@ -23,6 +24,7 @@ var _knockback_left := 0.0
 @onready var camera: Camera2D = %Camera
 @onready var _sprite: Sprite2D = %Sprite
 @onready var _attack_area: Area2D = %AttackArea
+@onready var _dig_bar: ProgressBar = %DigBar
 
 
 func _physics_process(delta: float) -> void:
@@ -49,10 +51,12 @@ func take_hit(damage: int, from: Vector2) -> void:
 	_invulnerable_left = INVULNERABLE_DURATION
 	_knockback = from.direction_to(global_position) * KNOCKBACK_SPEED
 	_knockback_left = KNOCKBACK_DURATION
+	Audio.play(&"hurt")
 	GameState.damage(damage)
 
 
 func _update_dig(delta: float) -> void:
+	_dig_bar.visible = false
 	if world == null or not Input.is_action_pressed("dig"):
 		_dig_progress = 0.0
 		return
@@ -64,10 +68,15 @@ func _update_dig(delta: float) -> void:
 	if cell != _dig_cell:
 		_dig_cell = cell
 		_dig_progress = 0.0
+		Audio.play(&"dig")
 	_dig_progress += delta * GameState.dig_speed_multiplier()
 	if _dig_progress >= block.hardness:
 		world.dig(cell)
 		_dig_progress = 0.0
+		return
+	_dig_bar.visible = true
+	_dig_bar.value = _dig_progress / block.hardness
+	_dig_bar.global_position = world.cell_center(cell) + DIG_BAR_OFFSET
 
 
 func _update_attack(delta: float) -> void:
@@ -75,6 +84,7 @@ func _update_attack(delta: float) -> void:
 	if _attack_cooldown > 0.0 or not Input.is_action_just_pressed("attack"):
 		return
 	_attack_cooldown = ATTACK_COOLDOWN
+	Audio.play(&"attack")
 	for body in _attack_area.get_overlapping_bodies():
 		if body is Enemy:
 			body.take_damage(GameState.attack_damage(), global_position)

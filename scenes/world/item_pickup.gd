@@ -14,5 +14,6 @@ func _ready() -> void:
 
 func _on_body_entered(body: Node2D) -> void:
 	if body is Player:
+		Audio.play(&"pickup")
 		GameState.add_item(item, count)
 		queue_free()

@@ -1,7 +1,7 @@
 extends Node
 
 const FIRE_PHASE := preload("res://scenes/phases/FirePhase.tscn")
-const WAIT_AFTER_IGNITE := 2.0
+const WAIT_AFTER_IGNITE := 2.5
 
 var _failures := 0
 
