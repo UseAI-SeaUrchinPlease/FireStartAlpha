@@ -21,6 +21,7 @@
 - Godot **4.7.2 stable** を使用。バージョン違いだとシーンやプロジェクト設定が壊れる可能性があるため揃えてください
 - `class_name` を持つスクリプトを追加/変更した後は、一度 `godot --headless --path . --import` を実行してからでないと `Could not find type X` エラーが出ることがあります(クラスキャッシュの更新タイミングの都合)
 - `.mcp.json` は各自のローカル環境(Godotの実行パスなど)に依存するため `.gitignore` 対象です。AI/MCPツールを使う場合は各自で作成してください
+- 本プロジェクトの開発には [godot-mcp](https://github.com/LeeSinLiang/godot-mcp)(シーン編集・実行・デバッグ出力取得などをAIから操作するMCPサーバー)を使用しています
 - テストは `tests/` にヘッドレスで実行できる形で置いています。`extends SceneTree` のものは `godot --headless --path . --script res://tests/xxx.gd`、Autoload に依存するものは `.tscn` にして `godot --headless --path . res://tests/Xxx.tscn` で実行してください
 - レンダラーはデスクトップ/エディタが Forward+、Web 書き出しのみ `gl_compatibility`(`project.godot` の `renderer/rendering_method.web` で上書き)。Web は Forward+ 非対応なので変更時は注意
 - 日本語テキストは `assets/fonts/DotGothic16-Regular.ttf` を `gui/theme/custom_font` に設定して表示しています。外すと日本語が文字化け(豆腐)します
