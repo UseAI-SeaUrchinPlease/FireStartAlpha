@@ -1,8 +1,9 @@
 extends Node
 
-enum Phase { DAY, FIRE, UPGRADE, GAME_OVER }
+enum Phase { TITLE, DAY, FIRE, UPGRADE, GAME_OVER }
 
 const PHASE_SCENES: Dictionary[Phase, PackedScene] = {
+	Phase.TITLE: preload("res://scenes/main/Title.tscn"),
 	Phase.DAY: preload("res://scenes/phases/DayPhase.tscn"),
 	Phase.FIRE: preload("res://scenes/phases/FirePhase.tscn"),
 	Phase.UPGRADE: preload("res://scenes/phases/UpgradePhase.tscn"),
@@ -14,9 +15,18 @@ var current_phase: Phase
 var _current_scene: GamePhase
 
 
+func start() -> void:
+	_enter(Phase.TITLE)
+
+
 func start_run() -> void:
 	GameState.reset()
+	GameState.apply_unlocks(MetaProgress.active_unlocks())
 	_enter(Phase.DAY)
+
+
+func current_scene() -> GamePhase:
+	return _current_scene
 
 
 func _enter(phase: Phase) -> void:
@@ -36,6 +46,8 @@ func _enter(phase: Phase) -> void:
 
 func _on_phase_finished(phase: Phase) -> void:
 	match phase:
+		Phase.TITLE:
+			start_run()
 		Phase.DAY:
 			_enter(Phase.FIRE)
 		Phase.FIRE:
@@ -44,8 +56,9 @@ func _on_phase_finished(phase: Phase) -> void:
 			GameState.advance_day()
 			_enter(Phase.DAY)
 		Phase.GAME_OVER:
-			start_run()
+			_enter(Phase.TITLE)
 
 
 func _on_phase_failed() -> void:
+	MetaProgress.record_run(GameState.day)
 	_enter(Phase.GAME_OVER)

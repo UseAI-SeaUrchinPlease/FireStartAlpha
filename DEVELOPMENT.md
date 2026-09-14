@@ -160,6 +160,7 @@ flowchart TD
 - `BlockData`: タイル、硬さ(採掘にかかる時間)、ドロップする `ItemData`
 - `EnemyData`: HP、攻撃力、移動速度、出現する最小日数
 - `UpgradeData`: 名前、コスト、効果の種類と量
+- `UnlockData`: 周回アンロック。灰のコストと、開始時に付与する素材や最大HPボーナス
 
 **マップ**
 
@@ -194,7 +195,8 @@ res://
 │   ├── items/
 │   ├── blocks/
 │   ├── enemies/
-│   └── upgrades/
+│   ├── upgrades/
+│   └── unlocks/
 ├── assets/
 │   ├── sprites/
 │   ├── audio/

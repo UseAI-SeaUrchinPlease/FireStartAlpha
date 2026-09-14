@@ -1,8 +1,8 @@
 [gd_scene load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://scenes/main/game_over.gd" id="1_script"]
+[ext_resource type="Script" path="res://scenes/main/title.gd" id="1_script"]
 
-[node name="GameOver" type="Node"]
+[node name="Title" type="Node"]
 script = ExtResource("1_script")
 
 [node name="UI" type="CanvasLayer" parent="."]
@@ -20,7 +20,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 1)
+color = Color(0.03, 0.03, 0.06, 1)
 
 [node name="Layout" type="VBoxContainer" parent="UI/Root"]
 anchors_preset = 8
@@ -28,29 +28,34 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -160.0
-offset_top = -70.0
-offset_right = 160.0
-offset_bottom = 70.0
+offset_left = -240.0
+offset_top = -150.0
+offset_right = 240.0
+offset_bottom = 150.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 10
 alignment = 1
 
 [node name="TitleLabel" type="Label" parent="UI/Root/Layout"]
-text = "GAME OVER"
+theme_override_font_sizes/font_size = 32
+text = "FireStarting"
 horizontal_alignment = 1
 
-[node name="DaysLabel" type="Label" parent="UI/Root/Layout"]
+[node name="BestLabel" type="Label" parent="UI/Root/Layout"]
 unique_name_in_owner = true
-text = "1日目で力尽きた"
+text = "さいこう記録: 0日"
 horizontal_alignment = 1
 
 [node name="AshLabel" type="Label" parent="UI/Root/Layout"]
 unique_name_in_owner = true
-text = "灰 +5   (合計 5)"
+text = "灰: 0"
 horizontal_alignment = 1
 
+[node name="Rows" type="VBoxContainer" parent="UI/Root/Layout"]
+unique_name_in_owner = true
+theme_override_constants/separation = 4
+
 [node name="HintLabel" type="Label" parent="UI/Root/Layout"]
-text = "E  タイトルへ"
+text = "↑ ↓  えらぶ      E  きめる"
 horizontal_alignment = 1

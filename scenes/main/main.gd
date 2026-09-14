@@ -7,7 +7,7 @@ extends Node
 func _ready() -> void:
 	EventBus.phase_changed.connect(_on_phase_changed)
 	PhaseManager.phase_root = _phase_root
-	PhaseManager.start_run()
+	PhaseManager.start()
 
 
 func _on_phase_changed(phase_name: StringName) -> void:

@@ -26,6 +26,15 @@ func reset() -> void:
 	hp_changed.emit()
 
 
+func apply_unlocks(active: Array[UnlockData]) -> void:
+	for unlock in active:
+		max_hp += unlock.max_hp_bonus
+		if unlock.start_item != null and unlock.start_item_count > 0:
+			add_item(unlock.start_item, unlock.start_item_count)
+	hp = max_hp
+	hp_changed.emit()
+
+
 func advance_day() -> void:
 	day += 1
 

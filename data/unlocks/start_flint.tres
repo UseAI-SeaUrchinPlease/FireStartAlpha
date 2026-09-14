@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UnlockData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/unlock_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://data/items/flint.tres" id="2_item"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"start_flint"
+display_name = "おまもりの火打石"
+description = "はじめから 火打石 x1 を持っている"
+cost = 10
+start_item = ExtResource("2_item")
+start_item_count = 1
