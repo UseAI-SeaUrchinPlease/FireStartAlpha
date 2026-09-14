@@ -136,6 +136,7 @@ flowchart TD
 - 基準解像度 640x360(1080p で整数3倍。→ 480x270 との比較は未決事項)
 - `rendering/textures/canvas_textures/default_texture_filter` を Nearest にする
 - stretch は現状の `canvas_items` + `expand` を維持し、`scale_mode = integer` を試す
+- フォント: `assets/fonts/DotGothic16-Regular.ttf`(OFL 1.1、ドット絵調の日本語対応フォント)を `gui/theme/custom_font` に設定し、全 Control の既定フォントにしている。Godot のデフォルトフォントは日本語グリフを含まないため、これを外すとテキストが豆腐(文字化け)になる
 
 ### アーキテクチャ
 
@@ -299,5 +300,5 @@ M6 完了後、できれば実際に小学生に遊んでもらってプレイ�
 - 基準解像度の最終決定(640x360 か 480x270 か)
 - 周回アンロックの具体的なリストと灰の価格
 - メタ通貨「灰」を含む世界観の言葉づかい(ゾンビの呼び名、素材名など)
-- 本番のピクセルアート(現状は `tools/gen_placeholder_art.gd` の ASCII パターンから生成)、BGM、日本語ピクセルフォント
+- 本番のピクセルアート(現状は `tools/gen_placeholder_art.gd` の ASCII パターンから生成)、BGM
 - 配布用エクスポート(Windows プリセット、エクスポートテンプレートの導入)

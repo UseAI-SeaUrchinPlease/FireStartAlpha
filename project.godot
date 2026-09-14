@@ -23,6 +23,10 @@ MetaProgress="*res://scripts/autoload/meta_progress.gd"
 PhaseManager="*res://scripts/autoload/phase_manager.gd"
 Audio="*res://scripts/autoload/audio.gd"
 
+[gui]
+
+theme/custom_font="res://assets/fonts/DotGothic16-Regular.ttf"
+
 [display]
 
 window/size/viewport_width=640
