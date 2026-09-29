@@ -6,7 +6,12 @@ const MAP_WIDTH := 96
 const MAP_HEIGHT := 64
 const INITIAL_ENEMIES := 2
 const ENEMIES_PER_DAY := 1
-const SPAWN_INTERVAL := 20.0
+const CAP_BASE := 5
+const CAP_PER_DAY := 1
+const CAP_MAX := 15
+const SPAWN_INTERVAL_BASE := 20.0
+const SPAWN_INTERVAL_DECAY_PER_DAY := 2.0
+const SPAWN_INTERVAL_MIN := 6.0
 const SPAWN_MIN_DISTANCE := 160.0
 const SPAWN_MAX_DISTANCE := 320.0
 const SPAWN_ATTEMPTS := 20
@@ -46,10 +51,10 @@ func _ready() -> void:
 		var enemy_type := resource as EnemyData
 		if enemy_type.min_day <= GameState.day:
 			_enemy_types.append(enemy_type)
-	for i in INITIAL_ENEMIES + ENEMIES_PER_DAY * (GameState.day - 1):
+	for i in mini(INITIAL_ENEMIES + ENEMIES_PER_DAY * (GameState.day - 1), _max_concurrent_enemies()):
 		_spawn_enemy()
 	_spawn_timer.timeout.connect(_spawn_enemy)
-	_spawn_timer.start(SPAWN_INTERVAL)
+	_spawn_timer.start(_spawn_interval())
 
 	GameState.inventory_changed.connect(_refresh_inventory)
 	GameState.hp_changed.connect(_on_hp_changed)
@@ -73,6 +78,14 @@ func enemy_count() -> int:
 	return count
 
 
+func _max_concurrent_enemies() -> int:
+	return mini(CAP_BASE + CAP_PER_DAY * (GameState.day - 1), CAP_MAX)
+
+
+func _spawn_interval() -> float:
+	return maxf(SPAWN_INTERVAL_MIN, SPAWN_INTERVAL_BASE - SPAWN_INTERVAL_DECAY_PER_DAY * (GameState.day - 1))
+
+
 func _daylight_color(elapsed: float) -> Color:
 	if elapsed < SUNSET_START:
 		return Color.WHITE
@@ -83,7 +96,7 @@ func _daylight_color(elapsed: float) -> Color:
 
 
 func _spawn_enemy() -> void:
-	if _enemy_types.is_empty():
+	if _enemy_types.is_empty() or enemy_count() >= _max_concurrent_enemies():
 		return
 	for attempt in SPAWN_ATTEMPTS:
 		var offset := Vector2.from_angle(randf() * TAU) * randf_range(SPAWN_MIN_DISTANCE, SPAWN_MAX_DISTANCE)
