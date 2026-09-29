@@ -17,7 +17,6 @@ var target: Node2D
 var world: GameWorld
 
 var _hp: int
-var _max_hp: int
 var _speed: float
 var _damage: int
 var _knockback := Vector2.ZERO
@@ -29,8 +28,7 @@ var _knockback_left := 0.0
 
 func _ready() -> void:
 	var day_offset := GameState.day - 1
-	_max_hp = int(data.max_hp + data.hp_growth_per_day * day_offset)
-	_hp = _max_hp
+	_hp = int(data.max_hp + data.hp_growth_per_day * day_offset)
 	_speed = minf(data.speed + data.speed_growth_per_day * day_offset, data.max_speed)
 	_damage = int(data.damage + data.damage_growth_per_day * day_offset)
 	_sprite.texture = data.sprite

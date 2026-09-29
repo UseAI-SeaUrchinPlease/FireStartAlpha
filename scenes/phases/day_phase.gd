@@ -22,6 +22,10 @@ const FLOW_FIELD_RADIUS_MARGIN := 2
 const FLOW_FIELD_COOLDOWN := 0.2
 
 @export var day_duration := 90.0
+## -1 は「ランダムなシードを使う」(通常のプレイ時の挙動)を意味する。
+## テストがスポーン成否を運任せにせず決定的に検証できるよう、外部から
+## 固定シードを注入できるようにしている。
+@export var map_seed := -1
 
 var _enemy_types: Array[EnemyData] = []
 var _ended := false
@@ -40,7 +44,7 @@ var _last_flow_field_cell := Vector2i.ZERO
 
 
 func _ready() -> void:
-	var map := MapGenerator.generate(randi(), MAP_WIDTH, MAP_HEIGHT)
+	var map := MapGenerator.generate(map_seed if map_seed >= 0 else randi(), MAP_WIDTH, MAP_HEIGHT)
 	_world.build(map)
 	_world.block_dug.connect(_on_block_dug)
 

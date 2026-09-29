@@ -38,6 +38,7 @@ func _run() -> void:
 	GameState.reset()
 	GameState.day = 20
 	phase = DAY_PHASE.instantiate()
+	phase.map_seed = 12345 # 15体全てのスポーン成否が運任せにならないよう固定する
 	add_child(phase)
 	await get_tree().physics_frame
 	await get_tree().physics_frame
