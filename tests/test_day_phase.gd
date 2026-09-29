@@ -35,6 +35,16 @@ func _run() -> void:
 	_check(phase.enemy_count() == 4, "day 3 starts with four enemies")
 	phase.queue_free()
 
+	GameState.reset()
+	GameState.day = 20
+	phase = DAY_PHASE.instantiate()
+	phase.map_seed = 12345 # 15体全てのスポーン成否が運任せにならないよう固定する
+	add_child(phase)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	_check(phase.enemy_count() == 15, "initial spawn is clamped to CAP_MAX on a late day instead of growing unbounded")
+	phase.queue_free()
+
 	if _failures == 0:
 		print("test_day_phase: OK")
 	get_tree().quit(1 if _failures > 0 else 0)
