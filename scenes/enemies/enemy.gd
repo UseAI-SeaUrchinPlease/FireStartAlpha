@@ -13,6 +13,7 @@ var world: GameWorld
 var _hp: int
 var _knockback := Vector2.ZERO
 var _knockback_left := 0.0
+var _attack_cooldown := 0.0
 var _break_cell := Vector2i.ZERO
 var _break_progress := 0.0
 
@@ -37,9 +38,12 @@ func _physics_process(delta: float) -> void:
 		_sprite.flip_h = velocity.x < 0.0
 	move_and_slide()
 	_update_breaking(delta)
+	_attack_cooldown = maxf(_attack_cooldown - delta, 0.0)
+	if _attack_cooldown > 0.0:
+		return
 	for body in _hitbox.get_overlapping_bodies():
-		if body is Player:
-			body.take_hit(data.damage, global_position)
+		if body is Player and body.take_hit(data.damage, global_position):
+			_attack_cooldown = data.attack_interval
 
 
 func take_damage(amount: int, from: Vector2) -> void:
