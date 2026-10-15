@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/brute.png" id="2_sprite"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"brute"
+display_name = "ブルート"
+sprite = ExtResource("2_sprite")
+max_hp = 5
+damage = 1
+speed = 30.0
+aggro_range = 1000.0
+min_day = 3
+knockback_speed = 60.0
+knockback_duration = 0.05
+break_speed = 0.5
