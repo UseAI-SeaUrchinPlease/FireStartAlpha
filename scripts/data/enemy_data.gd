@@ -9,3 +9,5 @@ extends Resource
 @export var speed: float = 45.0
 @export var aggro_range: float = 180.0
 @export var min_day: int = 1
+@export var knockback_speed: float = 120.0
+@export var knockback_duration: float = 0.15

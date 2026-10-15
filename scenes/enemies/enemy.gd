@@ -5,8 +5,6 @@ signal died
 
 const HIT_FLASH_COLOR := Color(4.0, 4.0, 4.0)
 const HIT_FLASH_DURATION := 0.12
-const KNOCKBACK_SPEED := 120.0
-const KNOCKBACK_DURATION := 0.15
 
 var data: EnemyData
 var target: Node2D
@@ -42,8 +40,8 @@ func _physics_process(delta: float) -> void:
 
 func take_damage(amount: int, from: Vector2) -> void:
 	_hp -= amount
-	_knockback = from.direction_to(global_position) * KNOCKBACK_SPEED
-	_knockback_left = KNOCKBACK_DURATION
+	_knockback = from.direction_to(global_position) * data.knockback_speed
+	_knockback_left = data.knockback_duration
 	create_tween().tween_property(_sprite, "modulate", Color.WHITE, HIT_FLASH_DURATION).from(HIT_FLASH_COLOR)
 	if _hp <= 0:
 		Audio.play(&"enemy_die")
