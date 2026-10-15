@@ -11,6 +11,8 @@ extends Resource
 @export var min_day: int = 1
 ## Seconds before it can hurt the player again after landing a hit.
 @export var attack_interval: float = 0.0
+## HP it must lose since its last knockback before it is knocked back again; 1 means every hit.
+@export var knockback_threshold: int = 1
 @export var knockback_speed: float = 120.0
 @export var knockback_duration: float = 0.15
 ## Seconds of continuous contact it takes to break a block, relative to its hardness; 0 means it cannot break blocks.

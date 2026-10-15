@@ -13,6 +13,7 @@ var world: GameWorld
 var _hp: int
 var _knockback := Vector2.ZERO
 var _knockback_left := 0.0
+var _damage_since_knockback := 0
 var _attack_cooldown := 0.0
 var _break_cell := Vector2i.ZERO
 var _break_progress := 0.0
@@ -48,8 +49,11 @@ func _physics_process(delta: float) -> void:
 
 func take_damage(amount: int, from: Vector2) -> void:
 	_hp -= amount
-	_knockback = from.direction_to(global_position) * data.knockback_speed
-	_knockback_left = data.knockback_duration
+	_damage_since_knockback += amount
+	if _damage_since_knockback >= data.knockback_threshold:
+		_damage_since_knockback = 0
+		_knockback = from.direction_to(global_position) * data.knockback_speed
+		_knockback_left = data.knockback_duration
 	create_tween().tween_property(_sprite, "modulate", Color.WHITE, HIT_FLASH_DURATION).from(HIT_FLASH_COLOR)
 	if _hp <= 0:
 		Audio.play(&"enemy_die")
