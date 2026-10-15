@@ -11,3 +11,5 @@ extends Resource
 @export var min_day: int = 1
 @export var knockback_speed: float = 120.0
 @export var knockback_duration: float = 0.15
+## Seconds of continuous contact it takes to break a block, relative to its hardness; 0 means it cannot break blocks.
+@export var break_speed: float = 0.0
