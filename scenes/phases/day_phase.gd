@@ -93,6 +93,7 @@ func _spawn_enemy() -> void:
 		var enemy: Enemy = ENEMY_SCENE.instantiate()
 		enemy.data = _enemy_types.pick_random()
 		enemy.target = _player
+		enemy.world = _world
 		enemy.position = _world.cell_center(cell)
 		_world.add_child(enemy)
 		return

@@ -45,14 +45,16 @@ func _physics_process(delta: float) -> void:
 	_update_invulnerability(delta)
 
 
-func take_hit(damage: int, from: Vector2) -> void:
+## Returns whether the hit landed (false while invulnerable).
+func take_hit(damage: int, from: Vector2) -> bool:
 	if _invulnerable_left > 0.0:
-		return
+		return false
 	_invulnerable_left = INVULNERABLE_DURATION
 	_knockback = from.direction_to(global_position) * KNOCKBACK_SPEED
 	_knockback_left = KNOCKBACK_DURATION
 	Audio.play(&"hurt")
 	GameState.damage(damage)
+	return true
 
 
 func _update_dig(delta: float) -> void:

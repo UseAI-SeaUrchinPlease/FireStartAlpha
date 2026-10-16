@@ -47,6 +47,12 @@ func dig(cell: Vector2i) -> void:
 	block_dug.emit(cell, block)
 
 
+## Removes a block without emitting block_dug, so nothing drops.
+func remove_block(cell: Vector2i) -> void:
+	map.cells.erase(cell)
+	_blocks.erase_cell(cell)
+
+
 func contains(cell: Vector2i) -> bool:
 	return cell.x >= 0 and cell.y >= 0 and cell.x < map.width and cell.y < map.height
 

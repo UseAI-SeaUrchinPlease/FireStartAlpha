@@ -190,6 +190,42 @@ const ZOMBIE: PackedStringArray = [
 	"...ZZ..ZZ...",
 	"............",
 ]
+const RUNNER: PackedStringArray = [
+	"............",
+	"............",
+	"....OOOO....",
+	"...OooooO...",
+	"...ookkoo...",
+	"...oxooxo...",
+	"....OooO....",
+	"...OoooOo...",
+	"..ooOooOoo..",
+	"...oooooo...",
+	"....oOOo....",
+	"....o..o....",
+	"...oO..Oo...",
+	"..OO....OO..",
+	"............",
+	"............",
+]
+const BRUTE: PackedStringArray = [
+	"...MMMMMM...",
+	"..MHHHHHHM..",
+	"..HHHHHHHH..",
+	"..HxHHHHxH..",
+	"..HHHHHHHH..",
+	"..MHSSSSHM..",
+	".WWWWWWWWWW.",
+	"HWWWSWWSWWWH",
+	"HWWWWWWWWWWH",
+	"HWWSWWWWSWWH",
+	".WWWWWWWWWW.",
+	"..MMMMMMMM..",
+	"..MMM..MMM..",
+	"..KKK..KKK..",
+	"..KKK..KKK..",
+	"............",
+]
 const CAMPFIRE: PackedStringArray = [
 	"................................",
 	"................................",
@@ -232,6 +268,8 @@ func _init() -> void:
 	_save_sheet("res://assets/sprites/items.png", [LOG, DRY_GRASS, FLINT])
 	_save_sheet("res://assets/sprites/player.png", [PLAYER])
 	_save_sheet("res://assets/sprites/zombie.png", [ZOMBIE])
+	_save_sheet("res://assets/sprites/runner.png", [RUNNER])
+	_save_sheet("res://assets/sprites/brute.png", [BRUTE])
 	_save_sheet("res://assets/sprites/campfire.png", [CAMPFIRE])
 	quit()
 
