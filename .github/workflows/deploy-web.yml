@@ -1,11 +1,14 @@
 name: Deploy site to GitHub Pages
 
 # サイト = ゲームの Web 版(ルート) + Issue 依存関係ページ(/deps/)。
+# - ゲームは常に main をビルドして公開する(リリース = main への push)
+# - 依存関係ページは dev(デフォルトブランチ)側で動く Issue/PR/cron のイベントで更新する
+#   (issues / pull_request_target / schedule はデフォルトブランチのワークフローしか使われない)
 # Pages のデプロイはこの1本に集約する(concurrency で直列化され、互いに上書き・取り消しをしない)。
-# ゲームのビルドは dev のコミットごとにキャッシュするので、Issue/PR イベントでは Godot を再ビルドしない。
+# ゲームのビルドは main のコミットごとにキャッシュするので、Issue/PR イベントでは Godot を再ビルドしない。
 on:
   push:
-    branches: [dev]
+    branches: [main]
   issues:
     types: [opened, edited, closed, reopened, deleted, transferred, assigned, unassigned]
   # pull_request_target はデフォルトブランチ側のコードで動くので、PR の中身は実行されない。
@@ -32,15 +35,28 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      # 依存ページ生成のツールは、イベントが起きたブランチ(Issue 等は dev)のものを使う
+      - name: Checkout (tools)
         uses: actions/checkout@v4
+
+      # ゲームは実行中のブランチによらず常に main をビルドする
+      - name: Checkout (game, main)
+        id: game-src
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: game-src
+
+      - name: Get main commit
+        id: main-sha
+        run: echo "sha=$(git -C game-src rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Restore game build cache
         id: game-cache
         uses: actions/cache@v4
         with:
           path: build/game
-          key: game-web-${{ github.sha }}
+          key: game-web-${{ steps.main-sha.outputs.sha }}
 
       - name: Setup Godot
         if: steps.game-cache.outputs.cache-hit != 'true'
@@ -56,13 +72,13 @@ jobs:
 
       - name: Import project resources
         if: steps.game-cache.outputs.cache-hit != 'true'
-        run: godot --headless --path . --import
+        run: godot --headless --path game-src --import
 
       - name: Export web build
         if: steps.game-cache.outputs.cache-hit != 'true'
         run: |
           mkdir -p build/game
-          godot --headless --path . --export-release "Web" build/game/index.html
+          godot --headless --path game-src --export-release "Web" "$GITHUB_WORKSPACE/build/game/index.html"
 
       - name: Assemble site
         run: |

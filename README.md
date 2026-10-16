@@ -27,5 +27,5 @@ Issue の依存関係と、今着手できるタスクは [依存関係マップ
 - テストは `tests/` にヘッドレスで実行できる形で置いています。`extends SceneTree` のものは `godot --headless --path . --script res://tests/xxx.gd`、Autoload に依存するものは `.tscn` にして `godot --headless --path . res://tests/Xxx.tscn` で実行してください
 - レンダラーはデスクトップ/エディタが Forward+、Web 書き出しのみ `gl_compatibility`(`project.godot` の `renderer/rendering_method.web` で上書き)。Web は Forward+ 非対応なので変更時は注意
 - 日本語テキストは `assets/fonts/DotGothic16-Regular.ttf` を `gui/theme/custom_font` に設定して表示しています。外すと日本語が文字化け(豆腐)します
-- `dev` に push(PR のマージ)すると GitHub Actions (`.github/workflows/deploy-web.yml`) が自動でWeb版をビルドし GitHub Pages に公開します。Issue/PR の更新時にも同じワークフローが走り、依存関係ページ(`/deps/`)だけを更新します(Web版のビルドは `dev` のコミットごとにキャッシュされます)
+- `main` に push(リリース)すると GitHub Actions (`.github/workflows/deploy-web.yml`) が自動でWeb版をビルドし GitHub Pages に公開します。Issue/PR の更新時(デフォルトブランチ `dev` 側で実行)にも同じワークフローが走り、公開中のゲームはそのままに依存関係ページ(`/deps/`)だけを更新します(Web版のビルドは `main` のコミットごとにキャッシュされます)
 - 設計や仕様に変更がある場合は `DEVELOPMENT.md` を正として更新してください
