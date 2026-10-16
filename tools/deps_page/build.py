@@ -9,7 +9,6 @@ import json
 import os
 import sys
 import urllib.request
-from datetime import datetime, timedelta, timezone
 
 API = "https://api.github.com"
 REPO = os.environ["GITHUB_REPOSITORY"]
@@ -109,27 +108,6 @@ def collect():
     return issues, blockers
 
 
-def waves(issues, blockers):
-    """先行 Issue がすべて終わった後で着手できる順に、波(段)へ分ける。"""
-    level = {}
-
-    def depth(n, seen=()):
-        if n in level:
-            return level[n]
-        if n in seen:  # 循環参照は 0 段扱いで打ち切る
-            return 0
-        bs = [b for b in blockers.get(n, []) if b in issues]
-        level[n] = 0 if not bs else 1 + max(depth(b, seen + (n,)) for b in bs)
-        return level[n]
-
-    for n in issues:
-        depth(n)
-    result = {}
-    for n, lv in level.items():
-        result.setdefault(lv, []).append(n)
-    return {lv: sorted(ns) for lv, ns in sorted(result.items())}
-
-
 def label(issues, n):
     t = issues[n]["title"].replace('"', "'")
     return f"#{n} {t}"
@@ -143,29 +121,20 @@ STATUS_STYLE = {  # (表示名, 塗り, 枠)
 }
 
 
-def mermaid(issues, blockers, wv, status):
+def mermaid(issues, blockers, status):
     lines = ["flowchart LR"]
-    for lv, ns in wv.items():
-        name = "第1波: 今すぐ着手できる" if lv == 0 else f"第{lv + 1}波"
-        lines.append(f'  subgraph W{lv}["{name}"]')
-        lines += [f'    i{n}["{label(issues, n)}"]' for n in ns]
-        lines.append("  end")
+    lines += [f'  i{n}["{label(issues, n)}"]' for n in sorted(issues)]
     for n, bs in blockers.items():
         lines += [f"  i{b} --> i{n}" for b in bs if b in issues]
-    for n in issues:
-        lines.append(f"  click i{n} href \"{issues[n]['html_url']}\" _blank")
     for key, (_, fill, stroke) in STATUS_STYLE.items():
         lines.append(f"  classDef {key} fill:{fill},stroke:{stroke},color:#1f2328")
-    for key in STATUS_STYLE:
-        members = ",".join(f"i{n}" for n in issues if status[n] == key)
+        members = ",".join(f"i{n}" for n in sorted(issues) if status[n] == key)
         if members:
             lines.append(f"  class {members} {key}")
     return "\n".join(lines)
 
 
-def render(issues, blockers, wv, status, prs, done):
-    jst = timezone(timedelta(hours=9))
-    now = datetime.now(jst).strftime("%Y-%m-%d %H:%M JST")
+def render(issues, blockers, status, prs, done):
     esc = html.escape
 
     def badge(key):
@@ -223,7 +192,7 @@ td,th{{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}}
 .b{{color:#1f2328;border:1px solid;border-radius:10px;padding:0 8px;font-size:12px;white-space:nowrap}}
 </style></head><body>
 <h1>Issue 依存関係マップ</h1>
-<p class="mut">最終更新: {now} / オープン {len(issues)} 件</p>
+<p class="mut">オープン {len(issues)} 件</p>
 <p>{counts}</p>
 <p class="mut">状態は Issue と PR から自動判定しています(blocked: 先行 Issue が未完了 / in progress: 担当者あり or draft PR / in review: オープンな PR あり)。依存関係は各 Issue の「blocked by」で編集してください。</p>
 {section("今すぐ着手できる", {"todo"}, ["Issue", "タイトル", "担当"], todo_cell)}
@@ -232,12 +201,12 @@ td,th{{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}}
 {done_rows()}
 <h2>ツリー</h2>
 <div class="mm"><pre class="mermaid">
-{esc(mermaid(issues, blockers, wv, status))}
+{esc(mermaid(issues, blockers, status))}
 </pre></div>
 <script type="module">
 import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.esm.min.mjs";
 const dark = matchMedia("(prefers-color-scheme: dark)").matches;
-mermaid.initialize({{startOnLoad:true,theme:dark?"dark":"default",securityLevel:"loose"}});
+mermaid.initialize({{startOnLoad:true,theme:dark?"dark":"default",securityLevel:"strict"}});
 </script>
 </body></html>
 """
@@ -249,12 +218,11 @@ def main():
     prs = collect_prs()
     status = {n: status_of(issues[n], blockers[n], prs.get(n, [])) for n in issues}
     done = collect_done()
-    wv = waves(issues, blockers)
     os.makedirs(out, exist_ok=True)
     with open(os.path.join(out, "index.html"), "w", encoding="utf-8") as f:
-        f.write(render(issues, blockers, wv, status, prs, done))
+        f.write(render(issues, blockers, status, prs, done))
     counts = {k: sum(1 for v in status.values() if v == k) for k in STATUS_STYLE}
-    print(f"issues={len(issues)} status={counts} done(recent)={len(done)} waves={len(wv)}")
+    print(f"issues={len(issues)} status={counts} done(recent)={len(done)}")
 
 
 if __name__ == "__main__":
