@@ -71,49 +71,60 @@ func _check_auto_repeat(world: GameWorld) -> void:
 	player.global_position = world.cell_center(target + Vector2i(0, 1))
 	player.set("_facing", Vector2.UP)
 
-	# 0.3秒間隔で約0.42秒押し続けると、押した瞬間と0.3秒後の2回叩く
-	Input.action_press("dig")
-	await _frames(25)
-	Input.action_release("dig")
-	_check(world.hit_count(target) == 2, "holding dig hits once at once and again every interval (got %d)" % world.hit_count(target))
-
-	world.clock += GameWorld.HIT_RESET_TIME + 1.0
-	await _frames(20)
-	for i in 10:
-		Input.action_press("dig")
-		await _frames(1)
-		Input.action_release("dig")
-		await _frames(1)
-	var mashed := world.hit_count(target)
-	_check(mashed >= 1 and mashed <= 2, "mashing for about 0.33 seconds is no faster than holding (got %d)" % mashed)
-
-	# 物理は 60Hz。0.3秒 = 18フレームちょうどの間隔で、37フレーム押すと 0, 18, 36 フレーム目の3回叩く
-	world.clock += GameWorld.HIT_RESET_TIME + 1.0
-	await _frames(20)
-	Input.action_press("dig")
-	await _frames(37)
-	Input.action_release("dig")
-	_check(world.hit_count(target) == 3, "the interval is exactly 18 frames at 60Hz (got %d hits in 37 frames)" % world.hit_count(target))
+	# 物理は 60Hz なので、0.3秒 = 18フレーム。押してからの経過フレームで、叩いたタイミングを1回ずつ確認する
+	var holding := func(_frame: int) -> bool: return true
+	var frames := await _hit_frames(world, target, 37, holding)
+	_check(frames == [0, 18, 36], "holding hits every 18 frames from the first press (got %s)" % [frames])
 
 	var dig: UpgradeData = load("res://data/upgrades/dig.tres")
 	GameState.upgrades[dig] = 4
-	world.clock += GameWorld.HIT_RESET_TIME + 1.0
-	await _frames(20)
-	Input.action_press("dig")
-	await _frames(37)
-	Input.action_release("dig")
-	_check(world.hit_count(target) == 5, "max dig speed halves the interval to 9 frames (got %d hits in 37 frames)" % world.hit_count(target))
+	frames = await _hit_frames(world, target, 37, holding)
+	_check(frames == [0, 9, 18, 27, 36], "max dig speed halves the interval to 9 frames (got %s)" % [frames])
 
-	# 1Lv の 0.24秒(14.4フレーム)は余りを繰り越すので、1秒間に 0, 0.24, 0.48, 0.72, 0.96 秒の5回叩く
+	# 1Lv の 0.24秒 = 14.4フレームは、余りを繰り越して 0, 14.4, 28.8, 43.2, 57.6 の切り上げで叩く
 	GameState.upgrades[dig] = 1
-	world.clock += GameWorld.HIT_RESET_TIME + 1.0
-	await _frames(20)
-	Input.action_press("dig")
-	await _frames(60)
-	Input.action_release("dig")
-	_check(world.hit_count(target) == 5, "a fractional-frame interval keeps its average by carrying the remainder (got %d hits in 60 frames)" % world.hit_count(target))
+	frames = await _hit_frames(world, target, 60, holding)
+	_check(frames == [0, 15, 29, 44, 58], "a fractional-frame interval keeps its average by carrying the remainder (got %s)" % [frames])
+	GameState.upgrades.clear()
+
+	# どんな押し方をしても、1回ごとの間隔が18フレームより短くならない
+	var patterns: Dictionary[String, Callable] = {
+		"1/1": func(frame: int) -> bool: return frame % 2 == 0,
+		"2/2": func(frame: int) -> bool: return frame % 4 < 2,
+		"3/1": func(frame: int) -> bool: return frame % 4 < 3,
+		"18/1": func(frame: int) -> bool: return frame % 19 < 18,
+		"1/16": func(frame: int) -> bool: return frame % 17 == 0,
+	}
+	for pattern: String in patterns:
+		frames = await _hit_frames(world, target, 120, patterns[pattern])
+		var shortest := 999
+		for i in range(1, frames.size()):
+			shortest = mini(shortest, frames[i] - frames[i - 1])
+		_check(frames.size() >= 2 and shortest >= 18, "mashing %s never makes a gap shorter than 18 frames (got %s)" % [pattern, frames])
 	GameState.upgrades.clear()
 	player.queue_free()
+
+
+## 待ち時間と叩いた回数を戻してから、frames フレームの間 pressed_at(経過フレーム) に従って
+## 掘るボタンを押し、叩いたフレームの一覧を返す。
+func _hit_frames(world: GameWorld, target: Vector2i, frames: int, pressed_at: Callable) -> Array[int]:
+	Input.action_release("dig")
+	world.clock += GameWorld.HIT_RESET_TIME + 1.0
+	await _frames(20)
+	var hits: Array[int] = []
+	var last := world.hit_count(target)
+	for frame in frames:
+		if pressed_at.call(frame):
+			Input.action_press("dig")
+		else:
+			Input.action_release("dig")
+		await get_tree().physics_frame
+		var count := world.hit_count(target)
+		if count > last:
+			hits.append(frame)
+		last = count
+	Input.action_release("dig")
+	return hits
 
 
 func _frames(count: int) -> void:

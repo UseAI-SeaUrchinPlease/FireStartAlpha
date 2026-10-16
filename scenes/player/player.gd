@@ -63,6 +63,8 @@ func take_hit(damage: int, from: Vector2) -> void:
 
 
 func _update_dig(delta: float) -> void:
+	# 前のフレームの時点で待ち時間が尽きていた(=連続して叩いている途中ではない)なら、余りは繰り越さない
+	var was_ready := _dig_cooldown <= DIG_COOLDOWN_EPSILON
 	_dig_cooldown -= delta
 	_blocked_mark_left = maxf(_blocked_mark_left - delta, 0.0)
 	_blocked_mark.visible = _blocked_mark_left > 0.0
@@ -73,9 +75,11 @@ func _update_dig(delta: float) -> void:
 	if Input.is_action_pressed("dig") and _dig_cooldown <= DIG_COOLDOWN_EPSILON:
 		var result := world.hit(cell, GameState.tool_level())
 		if result != GameWorld.HitResult.NONE:
-			# 押し続けている間はフレームに収まらなかった余りを次に繰り越し、間隔を平均で正確に保つ。
-			# 離していた間に溜まった分は1フレーム分までしか持ち越さない。
-			_dig_cooldown = maxf(_dig_cooldown, -delta) + DIG_INTERVAL / GameState.dig_speed_multiplier()
+			# 押し続けて連続で叩いている間だけ、フレームに収まらなかった余りを次に繰り越して
+			# 平均の間隔を正確に保つ。押し直したときは間隔をきっちり数え直し、1回ごとの
+			# 間隔が DIG_INTERVAL より短くならないようにする。
+			var interval := DIG_INTERVAL / GameState.dig_speed_multiplier()
+			_dig_cooldown = interval if was_ready else _dig_cooldown + interval
 		if result == GameWorld.HitResult.HIT:
 			Audio.play(&"dig")
 		elif result == GameWorld.HitResult.BLOCKED:
@@ -83,6 +87,7 @@ func _update_dig(delta: float) -> void:
 			_blocked_mark.global_position = world.cell_center(cell) + BLOCKED_MARK_OFFSET
 			_blocked_mark_left = BLOCKED_MARK_DURATION
 			_blocked_mark.visible = true
+	_dig_cooldown = maxf(_dig_cooldown, 0.0)
 	var block := world.get_block(cell)
 	var count := world.hit_count(cell)
 	if block == null or count == 0:
