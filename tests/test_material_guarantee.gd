@@ -42,8 +42,13 @@ func _check_real_data() -> void:
 	blocks.assign(DataDir.load_all("res://data/blocks"))
 	var items: Array[ItemData] = []
 	items.assign(DataDir.load_all("res://data/items"))
-	for resource in DataDir.load_all("res://data/fire_requirements"):
-		var requirement := resource as FireRequirement
+	var requirements: Array[FireRequirement] = []
+	requirements.assign(DataDir.load_all("res://data/fire_requirements"))
+	var expected: Dictionary[StringName, int] = {&"grass": 3, &"birch": 3, &"iron_ore": 6, &"tree": 9, &"pine": 3, &"coal_seam": 6}
+	var actual := MaterialGuarantee.block_minimums(requirements, blocks, items)
+	_check(actual == expected, "the real data guarantees the minimums in DEVELOPMENT.md 8.3 (got %s)" % actual)
+	for requirement in requirements:
+		var resource := requirement
 		var item := requirement.item if requirement.item != null else MaterialGuarantee.weakest_item(items, requirement.role)
 		_check(item != null and MaterialGuarantee.source_block(blocks, item) != null, "some block drops the item needed by " + resource.resource_path)
 

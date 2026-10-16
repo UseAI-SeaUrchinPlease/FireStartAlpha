@@ -87,14 +87,31 @@ func _check_auto_repeat(world: GameWorld) -> void:
 	var mashed := world.hit_count(target)
 	_check(mashed >= 1 and mashed <= 2, "mashing for about 0.33 seconds is no faster than holding (got %d)" % mashed)
 
+	# 物理は 60Hz。0.3秒 = 18フレームちょうどの間隔で、37フレーム押すと 0, 18, 36 フレーム目の3回叩く
+	world.clock += GameWorld.HIT_RESET_TIME + 1.0
+	await _frames(20)
+	Input.action_press("dig")
+	await _frames(37)
+	Input.action_release("dig")
+	_check(world.hit_count(target) == 3, "the interval is exactly 18 frames at 60Hz (got %d hits in 37 frames)" % world.hit_count(target))
+
 	var dig: UpgradeData = load("res://data/upgrades/dig.tres")
 	GameState.upgrades[dig] = 4
 	world.clock += GameWorld.HIT_RESET_TIME + 1.0
 	await _frames(20)
 	Input.action_press("dig")
-	await _frames(25)
+	await _frames(37)
 	Input.action_release("dig")
-	_check(world.hit_count(target) == 3, "max dig speed halves the interval (got %d)" % world.hit_count(target))
+	_check(world.hit_count(target) == 5, "max dig speed halves the interval to 9 frames (got %d hits in 37 frames)" % world.hit_count(target))
+
+	# 1Lv の 0.24秒(14.4フレーム)は余りを繰り越すので、1秒間に 0, 0.24, 0.48, 0.72, 0.96 秒の5回叩く
+	GameState.upgrades[dig] = 1
+	world.clock += GameWorld.HIT_RESET_TIME + 1.0
+	await _frames(20)
+	Input.action_press("dig")
+	await _frames(60)
+	Input.action_release("dig")
+	_check(world.hit_count(target) == 5, "a fractional-frame interval keeps its average by carrying the remainder (got %d hits in 60 frames)" % world.hit_count(target))
 	GameState.upgrades.clear()
 	player.queue_free()
 

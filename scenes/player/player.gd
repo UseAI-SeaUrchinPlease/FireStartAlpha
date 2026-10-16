@@ -6,6 +6,8 @@ const DIG_REACH := 12.0
 const DIG_BAR_OFFSET := Vector2(-8.0, -13.0)
 ## 押しっぱなしで自動的に叩く間隔。連打してもこれより速くは叩けない (DEVELOPMENT.md 8.5)。
 const DIG_INTERVAL := 0.3
+## 毎フレーム delta を引いた結果に残る浮動小数点の誤差で1フレーム遅れないための許容幅。
+const DIG_COOLDOWN_EPSILON := 0.0001
 const BLOCKED_MARK_OFFSET := Vector2(-4.0, -12.0)
 const BLOCKED_MARK_DURATION := 0.4
 const ATTACK_REACH := 14.0
@@ -61,17 +63,19 @@ func take_hit(damage: int, from: Vector2) -> void:
 
 
 func _update_dig(delta: float) -> void:
-	_dig_cooldown = maxf(_dig_cooldown - delta, 0.0)
+	_dig_cooldown -= delta
 	_blocked_mark_left = maxf(_blocked_mark_left - delta, 0.0)
 	_blocked_mark.visible = _blocked_mark_left > 0.0
 	_dig_bar.visible = false
 	if world == null:
 		return
 	var cell := world.cell_at(global_position + _facing * DIG_REACH)
-	if Input.is_action_pressed("dig") and _dig_cooldown <= 0.0:
+	if Input.is_action_pressed("dig") and _dig_cooldown <= DIG_COOLDOWN_EPSILON:
 		var result := world.hit(cell, GameState.tool_level())
 		if result != GameWorld.HitResult.NONE:
-			_dig_cooldown = DIG_INTERVAL / GameState.dig_speed_multiplier()
+			# 押し続けている間はフレームに収まらなかった余りを次に繰り越し、間隔を平均で正確に保つ。
+			# 離していた間に溜まった分は1フレーム分までしか持ち越さない。
+			_dig_cooldown = maxf(_dig_cooldown, -delta) + DIG_INTERVAL / GameState.dig_speed_multiplier()
 		if result == GameWorld.HitResult.HIT:
 			Audio.play(&"dig")
 		elif result == GameWorld.HitResult.BLOCKED:
