@@ -2,6 +2,8 @@
 
 火起こしをモチーフにした2Dローグライク。設計の全体像は [DEVELOPMENT.md](DEVELOPMENT.md) を参照してください。
 
+タスクの進捗と、今着手できる Issue は [タスクボード(GitHub Project)](https://github.com/orgs/UseAI-SeaUrchinPlease/projects/1) で管理しています(チームメンバーのみ閲覧可)。先行して終わらせる必要がある Issue は、Issue の「Relationships → Blocked by」に登録してください。
+
 ## 操作方法
 
 | 操作 | キーボード | ゲームパッド |
