@@ -2,10 +2,10 @@ name: Deploy site to GitHub Pages
 
 # サイト = ゲームの Web 版(ルート) + Issue 依存関係ページ(/deps/)。
 # Pages のデプロイはこの1本に集約する(concurrency で直列化され、互いに上書き・取り消しをしない)。
-# ゲームのビルドは main のコミットごとにキャッシュするので、Issue/PR イベントでは Godot を再ビルドしない。
+# ゲームのビルドは dev のコミットごとにキャッシュするので、Issue/PR イベントでは Godot を再ビルドしない。
 on:
   push:
-    branches: [main, master]
+    branches: [dev]
   issues:
     types: [opened, edited, closed, reopened, deleted, transferred, assigned, unassigned]
   # pull_request_target はデフォルトブランチ側のコードで動くので、PR の中身は実行されない。
