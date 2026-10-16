@@ -1,6 +1,7 @@
 extends GamePhase
 
 const RESULT_DELAY := 2.0
+const MISS_COOLDOWN := 0.5
 const FLAME_PER_DEGREE := 0.4
 const FLAME_MIN := 24
 const FLAME_MAX := 140
@@ -8,11 +9,13 @@ const FLAME_MAX := 140
 var _slots: Array[FireSlot] = []
 var _focus := 0
 var _resolved := false
+var _retry_ready := true
 
 @onready var _title_label: Label = %TitleLabel
 @onready var _predict_label: Label = %PredictLabel
 @onready var _temp_gauge: ProgressBar = %TempGauge
 @onready var _result_label: Label = %ResultLabel
+@onready var _timing_bar: TimingBar = %TimingBar
 @onready var _flame: CPUParticles2D = %Flame
 @onready var _smoke: CPUParticles2D = %Smoke
 @onready var _fuel_slot: FireSlot = %FuelSlot
@@ -29,6 +32,7 @@ func _ready() -> void:
 	_temp_gauge.max_value = GameState.target_temperature()
 	_set_focus(0)
 	_refresh_prediction()
+	_timing_bar.start()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -49,13 +53,29 @@ func _unhandled_input(event: InputEvent) -> void:
 		_refresh_prediction()
 		Audio.play(&"menu_move")
 	elif event.is_action_pressed("interact"):
+		_try_ignite()
+
+
+func _try_ignite() -> void:
+	if not _retry_ready:
+		return
+	if _timing_bar.press():
 		ignite()
+		return
+	_result_label.text = "ミス！  もういちど"
+	Audio.play(&"fire_fail")
+	_retry_ready = false
+	await get_tree().create_timer(MISS_COOLDOWN).timeout
+	_retry_ready = true
+	if not _resolved:
+		_result_label.text = ""
 
 
 func ignite() -> void:
 	if _resolved:
 		return
 	_resolved = true
+	_timing_bar.stop()
 	var contributions := _contributions()
 	var temperature := FireCalculator.temperature(contributions)
 	var target := GameState.target_temperature()
