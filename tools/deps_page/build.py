@@ -35,6 +35,69 @@ def get(path):
     return items
 
 
+PR_QUERY = """
+query($owner: String!, $name: String!, $after: String) {
+  repository(owner: $owner, name: $name) {
+    issues(states: OPEN, first: 100, after: $after) {
+      pageInfo { hasNextPage endCursor }
+      nodes {
+        number
+        closedByPullRequestsReferences(first: 10, includeClosedPrs: false) {
+          nodes { number url isDraft state }
+        }
+      }
+    }
+  }
+}
+"""
+
+DONE_LIMIT = 10  # 「最近完了」に出すクローズ済み Issue の件数
+
+
+def graphql(query, variables):
+    req = urllib.request.Request(
+        f"{API}/graphql",
+        data=json.dumps({"query": query, "variables": variables}).encode(),
+        headers={"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"})
+    with urllib.request.urlopen(req) as res:
+        body = json.load(res)
+    if "errors" in body:
+        raise RuntimeError(body["errors"])
+    return body["data"]
+
+
+def collect_prs():
+    """オープンな Issue ごとに、それを閉じる予定のオープンな PR を返す。"""
+    owner, name = REPO.split("/")
+    prs, after = {}, None
+    while True:
+        conn = graphql(PR_QUERY, {"owner": owner, "name": name, "after": after})["repository"]["issues"]
+        for node in conn["nodes"]:
+            prs[node["number"]] = [p for p in node["closedByPullRequestsReferences"]["nodes"]
+                                   if p["state"] == "OPEN"]
+        if not conn["pageInfo"]["hasNextPage"]:
+            return prs
+        after = conn["pageInfo"]["endCursor"]
+
+
+def collect_done():
+    """最近クローズされた Issue(実装済みのもの。not planned は除く)。"""
+    closed = get(f"/repos/{REPO}/issues?state=closed&sort=updated&direction=desc")
+    done = [i for i in closed
+            if "pull_request" not in i and i.get("state_reason") != "not_planned"
+            and not i["title"].startswith("[管理]")]
+    return sorted(done, key=lambda i: i["closed_at"], reverse=True)[:DONE_LIMIT]
+
+
+def status_of(issue, blocked_by, prs):
+    """todo / blocked / in_progress / in_review のいずれか。"""
+    if any(not p["isDraft"] for p in prs):
+        return "in_review"
+    if prs or issue["assignees"]:
+        return "in_progress"
+    return "blocked" if blocked_by else "todo"
+
+
 def collect():
     issues = {i["number"]: i for i in get(f"/repos/{REPO}/issues?state=open")
               if "pull_request" not in i and not i["title"].startswith("[管理]")}
@@ -142,6 +205,12 @@ mermaid.initialize({{startOnLoad:true,theme:dark?"dark":"default",securityLevel:
 def main():
     out = sys.argv[1]
     issues, blockers = collect()
+    prs = collect_prs()
+    status = {n: status_of(issues[n], blockers[n], prs.get(n, [])) for n in issues}
+    done = collect_done()
+    counts = {k: sum(1 for v in status.values() if v == k)
+              for k in ("todo", "blocked", "in_progress", "in_review")}
+    print(f"status={counts} done(recent)={len(done)}")
     wv = waves(issues, blockers)
     os.makedirs(out, exist_ok=True)
     with open(os.path.join(out, "index.html"), "w", encoding="utf-8") as f:
