@@ -13,4 +13,4 @@ id = &"wood"
 display_name = "薪"
 icon = SubResource("AtlasTexture_icon")
 fire_role = 1
-heat = 30.0
+heat = 20.0

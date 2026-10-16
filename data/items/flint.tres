@@ -12,5 +12,5 @@ script = ExtResource("1_script")
 id = &"flint"
 display_name = "火打石"
 icon = SubResource("AtlasTexture_icon")
-fire_role = 3
-heat = 20.0
+fire_role = 2
+heat = 15.0

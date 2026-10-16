@@ -11,6 +11,7 @@ var _next_player := 0
 
 func _ready() -> void:
 	_streams[&"dig"] = _to_stream(_noise(0.05, 30.0))
+	_streams[&"dig_blocked"] = _to_stream(_sweep(160.0, 110.0, 0.1, 18.0, true))
 	_streams[&"break"] = _to_stream(_mix(_noise(0.12, 18.0), _sweep(140.0, 60.0, 0.14, 12.0, false)))
 	_streams[&"pickup"] = _to_stream(_notes([660.0, 990.0], 0.06, true))
 	_streams[&"attack"] = _to_stream(_noise(0.09, 22.0))

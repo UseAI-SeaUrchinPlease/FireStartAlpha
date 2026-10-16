@@ -10,6 +10,7 @@ var _focus := 0
 @onready var _points_label: Label = %PointsLabel
 @onready var _hp_label: Label = %HPLabel
 @onready var _rows_container: VBoxContainer = %Rows
+@onready var _upcoming_label: Label = %UpcomingLabel
 
 
 func _ready() -> void:
@@ -20,6 +21,7 @@ func _ready() -> void:
 		var row: MenuRow = ROW_SCENE.instantiate()
 		_rows_container.add_child(row)
 		_rows.append(row)
+	_show_upcoming_requirements()
 	set_focus(0)
 	_refresh()
 
@@ -43,6 +45,16 @@ func activate_focused() -> void:
 	if GameState.buy_upgrade(_upgrades[_focus]):
 		Audio.play(&"pickup")
 		_refresh()
+
+
+## 道具が必要かどうかは伏せ、必須素材だけを予告する (DEVELOPMENT.md 8.4)。
+func _show_upcoming_requirements() -> void:
+	var upcoming := GameState.upcoming_requirements()
+	_upcoming_label.visible = not upcoming.is_empty()
+	var lines: PackedStringArray = ["これからの必須素材"]
+	for requirement in upcoming:
+		lines.append("  %s: %d日目から %s" % [ItemData.ROLE_NAMES[requirement.role], requirement.min_day, requirement.describe()])
+	_upcoming_label.text = "\n".join(lines)
 
 
 func row_count() -> int:

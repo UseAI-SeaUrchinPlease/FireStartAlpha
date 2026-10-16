@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="FireRequirement" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/fire_requirement.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+min_day = 1
+role = 2
+count = 1

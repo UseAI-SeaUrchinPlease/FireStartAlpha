@@ -4,6 +4,12 @@ extends CharacterBody2D
 const SPEED := 90.0
 const DIG_REACH := 12.0
 const DIG_BAR_OFFSET := Vector2(-8.0, -13.0)
+## 押しっぱなしで自動的に叩く間隔。連打してもこれより速くは叩けない (DEVELOPMENT.md 8.5)。
+const DIG_INTERVAL := 0.3
+## 毎フレーム delta を引いた結果に残る浮動小数点の誤差で1フレーム遅れないための許容幅。
+const DIG_COOLDOWN_EPSILON := 0.0001
+const BLOCKED_MARK_OFFSET := Vector2(-4.0, -12.0)
+const BLOCKED_MARK_DURATION := 0.4
 const ATTACK_REACH := 14.0
 const ATTACK_COOLDOWN := 0.4
 const INVULNERABLE_DURATION := 0.8
@@ -14,8 +20,8 @@ const KNOCKBACK_DURATION := 0.12
 var world: GameWorld
 
 var _facing := Vector2.DOWN
-var _dig_cell := Vector2i.ZERO
-var _dig_progress := 0.0
+var _dig_cooldown := 0.0
+var _blocked_mark_left := 0.0
 var _attack_cooldown := 0.0
 var _invulnerable_left := 0.0
 var _knockback := Vector2.ZERO
@@ -25,6 +31,7 @@ var _knockback_left := 0.0
 @onready var _sprite: Sprite2D = %Sprite
 @onready var _attack_area: Area2D = %AttackArea
 @onready var _dig_bar: ProgressBar = %DigBar
+@onready var _blocked_mark: Label = %BlockedMark
 
 
 func _physics_process(delta: float) -> void:
@@ -56,26 +63,37 @@ func take_hit(damage: int, from: Vector2) -> void:
 
 
 func _update_dig(delta: float) -> void:
+	# 前のフレームの時点で待ち時間が尽きていた(=連続して叩いている途中ではない)なら、余りは繰り越さない
+	var was_ready := _dig_cooldown <= DIG_COOLDOWN_EPSILON
+	_dig_cooldown -= delta
+	_blocked_mark_left = maxf(_blocked_mark_left - delta, 0.0)
+	_blocked_mark.visible = _blocked_mark_left > 0.0
 	_dig_bar.visible = false
-	if world == null or not Input.is_action_pressed("dig"):
-		_dig_progress = 0.0
+	if world == null:
 		return
 	var cell := world.cell_at(global_position + _facing * DIG_REACH)
+	if Input.is_action_pressed("dig") and _dig_cooldown <= DIG_COOLDOWN_EPSILON:
+		var result := world.hit(cell, GameState.tool_level())
+		if result != GameWorld.HitResult.NONE:
+			# 押し続けて連続で叩いている間だけ、フレームに収まらなかった余りを次に繰り越して
+			# 平均の間隔を正確に保つ。押し直したときは間隔をきっちり数え直し、1回ごとの
+			# 間隔が DIG_INTERVAL より短くならないようにする。
+			var interval := DIG_INTERVAL / GameState.dig_speed_multiplier()
+			_dig_cooldown = interval if was_ready else _dig_cooldown + interval
+		if result == GameWorld.HitResult.HIT:
+			Audio.play(&"dig")
+		elif result == GameWorld.HitResult.BLOCKED:
+			Audio.play(&"dig_blocked")
+			_blocked_mark.global_position = world.cell_center(cell) + BLOCKED_MARK_OFFSET
+			_blocked_mark_left = BLOCKED_MARK_DURATION
+			_blocked_mark.visible = true
+	_dig_cooldown = maxf(_dig_cooldown, 0.0)
 	var block := world.get_block(cell)
-	if block == null or block.hardness <= 0.0:
-		_dig_progress = 0.0
-		return
-	if cell != _dig_cell:
-		_dig_cell = cell
-		_dig_progress = 0.0
-		Audio.play(&"dig")
-	_dig_progress += delta * GameState.dig_speed_multiplier()
-	if _dig_progress >= block.hardness:
-		world.dig(cell)
-		_dig_progress = 0.0
+	var count := world.hit_count(cell)
+	if block == null or count == 0:
 		return
 	_dig_bar.visible = true
-	_dig_bar.value = _dig_progress / block.hardness
+	_dig_bar.value = float(count) / block.hits
 	_dig_bar.global_position = world.cell_center(cell) + DIG_BAR_OFFSET
 
 
