@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""オープンな Issue の依存関係(blocked by)から、静的な依存関係ページを生成する。
+"""オープンな Issue の依存関係(blocked by)と PR の状況から、静的な依存関係ページを生成する。
 
 使い方: GITHUB_TOKEN=... GITHUB_REPOSITORY=owner/repo python3 build.py <出力ディレクトリ>
 標準ライブラリのみ。出力は <出力ディレクトリ>/index.html。
@@ -135,7 +135,15 @@ def label(issues, n):
     return f"#{n} {t}"
 
 
-def mermaid(issues, blockers, wv):
+STATUS_STYLE = {  # (表示名, 塗り, 枠)
+    "todo": ("todo", "#ddf4ff", "#0969da"),
+    "blocked": ("blocked", "#eaeef2", "#8c959f"),
+    "in_progress": ("in progress", "#fff8c5", "#bf8700"),
+    "in_review": ("in review", "#fbefff", "#8250df"),
+}
+
+
+def mermaid(issues, blockers, wv, status):
     lines = ["flowchart LR"]
     for lv, ns in wv.items():
         name = "第1波: 今すぐ着手できる" if lv == 0 else f"第{lv + 1}波"
@@ -144,30 +152,63 @@ def mermaid(issues, blockers, wv):
         lines.append("  end")
     for n, bs in blockers.items():
         lines += [f"  i{b} --> i{n}" for b in bs if b in issues]
-    for lv, ns in wv.items():
-        for n in ns:
-            if lv == 0:
-                lines.append(f"  click i{n} href \"{issues[n]['html_url']}\" _blank")
+    for n in issues:
+        lines.append(f"  click i{n} href \"{issues[n]['html_url']}\" _blank")
+    for key, (_, fill, stroke) in STATUS_STYLE.items():
+        lines.append(f"  classDef {key} fill:{fill},stroke:{stroke},color:#1f2328")
+    for key in STATUS_STYLE:
+        members = ",".join(f"i{n}" for n in issues if status[n] == key)
+        if members:
+            lines.append(f"  class {members} {key}")
     return "\n".join(lines)
 
 
-def render(issues, blockers, wv):
-    ready = wv.get(0, [])
+def render(issues, blockers, wv, status, prs, done):
     jst = timezone(timedelta(hours=9))
     now = datetime.now(jst).strftime("%Y-%m-%d %H:%M JST")
+    esc = html.escape
 
-    def row(n, with_blockers=False):
+    def badge(key):
+        name, fill, stroke = STATUS_STYLE[key]
+        return f'<span class="b" style="background:{fill};border-color:{stroke}">{name}</span>'
+
+    def link(i):
+        return f'<a href="{i["html_url"]}">#{i["number"]}</a>'
+
+    def assignee(i):
+        return esc(", ".join(a["login"] for a in i["assignees"]) or "—")
+
+    def pr_links(n):
+        return " ".join(f'<a href="{p["url"]}">PR #{p["number"]}{" (draft)" if p["isDraft"] else ""}</a>'
+                        for p in prs.get(n, [])) or "—"
+
+    def section(title, keys, cols, cell):
+        ns = [n for n in sorted(issues) if status[n] in keys]
+        head = "".join(f"<th>{c}</th>" for c in cols)
+        rows = "\n".join(f"<tr>{cell(n)}</tr>" for n in ns) or f'<tr><td colspan="{len(cols)}">なし</td></tr>'
+        return f"<h2>{title} ({len(ns)})</h2>\n<table><tr>{head}</tr>\n{rows}</table>"
+
+    def todo_cell(n):
         i = issues[n]
-        assignee = ", ".join(a["login"] for a in i["assignees"]) or "—"
-        extra = ""
-        if with_blockers:
-            extra = "<td>" + ", ".join(f"#{b}" for b in blockers[n]) + "</td>"
-        return (f'<tr><td><a href="{i["html_url"]}">#{n}</a></td>'
-                f'<td>{html.escape(i["title"])}</td><td>{html.escape(assignee)}</td>{extra}</tr>')
+        return f"<td>{link(i)}</td><td>{esc(i['title'])}</td><td>{assignee(i)}</td>"
 
-    ready_rows = "\n".join(row(n) for n in ready) or '<tr><td colspan="3">なし</td></tr>'
-    waiting = [n for lv, ns in wv.items() if lv > 0 for n in ns]
-    waiting_rows = "\n".join(row(n, True) for n in waiting) or '<tr><td colspan="4">なし</td></tr>'
+    def active_cell(n):
+        i = issues[n]
+        return (f"<td>{link(i)}</td><td>{esc(i['title'])}</td><td>{badge(status[n])}</td>"
+                f"<td>{assignee(i)}</td><td>{pr_links(n)}</td>")
+
+    def blocked_cell(n):
+        i = issues[n]
+        return (f"<td>{link(i)}</td><td>{esc(i['title'])}</td>"
+                f"<td>{', '.join('#' + str(b) for b in blockers[n])}</td>")
+
+    def done_rows():
+        rows = "\n".join(
+            f"<tr><td>{link(i)}</td><td>{esc(i['title'])}</td><td>{i['closed_at'][:10]}</td></tr>"
+            for i in done) or '<tr><td colspan="3">なし</td></tr>'
+        return f"<h2>最近完了 (直近 {len(done)} 件)</h2>\n<table><tr><th>Issue</th><th>タイトル</th><th>完了日</th></tr>\n{rows}</table>"
+
+    counts = " / ".join(f"{badge(k)} {sum(1 for v in status.values() if v == k)}" for k in STATUS_STYLE)
     return f"""<!doctype html>
 <html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -179,19 +220,19 @@ body{{background:var(--bg);color:var(--fg);font:15px/1.6 system-ui,sans-serif;ma
 a{{color:#0969da}}table{{border-collapse:collapse;width:100%}}
 td,th{{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}}
 .mut{{color:var(--mut)}}.mm{{overflow-x:auto}}
+.b{{color:#1f2328;border:1px solid;border-radius:10px;padding:0 8px;font-size:12px;white-space:nowrap}}
 </style></head><body>
 <h1>Issue 依存関係マップ</h1>
-<p class="mut">最終更新: {now} / オープン {len(issues)} 件 / 着手できる {len(ready)} 件。
-GitHub の「blocked by」から自動生成しています。依存関係の編集は各 Issue で行ってください。</p>
-<h2>今すぐ着手できる ({len(ready)})</h2>
-<table><tr><th>Issue</th><th>タイトル</th><th>担当</th></tr>
-{ready_rows}</table>
-<h2>先行待ち ({len(waiting)})</h2>
-<table><tr><th>Issue</th><th>タイトル</th><th>担当</th><th>待っている Issue</th></tr>
-{waiting_rows}</table>
+<p class="mut">最終更新: {now} / オープン {len(issues)} 件</p>
+<p>{counts}</p>
+<p class="mut">状態は Issue と PR から自動判定しています(blocked: 先行 Issue が未完了 / in progress: 担当者あり or draft PR / in review: オープンな PR あり)。依存関係は各 Issue の「blocked by」で編集してください。</p>
+{section("今すぐ着手できる", {"todo"}, ["Issue", "タイトル", "担当"], todo_cell)}
+{section("進行中", {"in_progress", "in_review"}, ["Issue", "タイトル", "状態", "担当", "PR"], active_cell)}
+{section("先行待ち", {"blocked"}, ["Issue", "タイトル", "待っている Issue"], blocked_cell)}
+{done_rows()}
 <h2>ツリー</h2>
 <div class="mm"><pre class="mermaid">
-{html.escape(mermaid(issues, blockers, wv))}
+{esc(mermaid(issues, blockers, wv, status))}
 </pre></div>
 <script type="module">
 import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.esm.min.mjs";
@@ -208,14 +249,12 @@ def main():
     prs = collect_prs()
     status = {n: status_of(issues[n], blockers[n], prs.get(n, [])) for n in issues}
     done = collect_done()
-    counts = {k: sum(1 for v in status.values() if v == k)
-              for k in ("todo", "blocked", "in_progress", "in_review")}
-    print(f"status={counts} done(recent)={len(done)}")
     wv = waves(issues, blockers)
     os.makedirs(out, exist_ok=True)
     with open(os.path.join(out, "index.html"), "w", encoding="utf-8") as f:
-        f.write(render(issues, blockers, wv))
-    print(f"issues={len(issues)} ready={len(wv.get(0, []))} waves={len(wv)}")
+        f.write(render(issues, blockers, wv, status, prs, done))
+    counts = {k: sum(1 for v in status.values() if v == k) for k in STATUS_STYLE}
+    print(f"issues={len(issues)} status={counts} done(recent)={len(done)} waves={len(wv)}")
 
 
 if __name__ == "__main__":
