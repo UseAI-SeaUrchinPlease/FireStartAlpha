@@ -1,0 +1,39 @@
+name: Update issue dependency page
+
+# Issue の依存関係(blocked by)から https://<pages>/deps/ を自動生成する。
+# gh-pages ブランチの deps/ だけを書き換えるので、ゲーム本体の公開内容(ルート)には触れない。
+on:
+  issues:
+    types: [opened, edited, closed, reopened, deleted, transferred, assigned, unassigned]
+  schedule:
+    # 依存関係の変更は issues イベントで拾えないことがあるため、定期実行で補う
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: read
+
+concurrency:
+  group: gh-pages-publish
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate page
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 -I tools/deps_page/build.py build/deps
+
+      - name: Publish to gh-pages /deps
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: build/deps
+          destination_dir: deps
+          keep_files: true
