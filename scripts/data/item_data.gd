@@ -1,7 +1,12 @@
 class_name ItemData
 extends Resource
 
-enum FireRole { NONE, FUEL, TINDER, IGNITER }
+enum FireRole { NONE, FUEL, IGNITER }
+
+const ROLE_NAMES: Dictionary[FireRole, String] = {
+	FireRole.FUEL: "燃料",
+	FireRole.IGNITER: "着火",
+}
 
 @export var id: StringName
 @export var display_name: String

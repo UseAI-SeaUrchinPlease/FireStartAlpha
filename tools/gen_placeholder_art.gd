@@ -154,6 +154,46 @@ const FLINT: PackedStringArray = [
 	"...SS...",
 	"........",
 ]
+const FATWOOD: PackedStringArray = [
+	"........",
+	"......Q.",
+	".....QqQ",
+	"....QqO.",
+	"...Qqq..",
+	"..qqO...",
+	".dqO....",
+	"..d.....",
+]
+const COAL: PackedStringArray = [
+	"........",
+	"...HH...",
+	"..HkkM..",
+	".HkkkkM.",
+	".kkkHkM.",
+	".MkkkMM.",
+	"..MMMM..",
+	"........",
+]
+const BIRCH_BARK: PackedStringArray = [
+	"........",
+	"..ffff..",
+	".fKfffe.",
+	".fffKfe.",
+	".eKfffe.",
+	"..eeee..",
+	"...e....",
+	"........",
+]
+const IRON_SHARD: PackedStringArray = [
+	"........",
+	"....rr..",
+	"...rPPS.",
+	"..rPPPS.",
+	".rPPPS..",
+	".PPPS...",
+	"..SS....",
+	"........",
+]
 const PLAYER: PackedStringArray = [
 	"....hhhh....",
 	"...hhhhhh...",
@@ -229,7 +269,7 @@ const CAMPFIRE: PackedStringArray = [
 func _init() -> void:
 	_save_sheet("res://assets/sprites/ground.png", [GRASS_FLOOR, DIRT_FLOOR])
 	_save_sheet("res://assets/sprites/blocks.png", [TREE, ROCK, GRASS_TUFT, WALL])
-	_save_sheet("res://assets/sprites/items.png", [LOG, DRY_GRASS, FLINT])
+	_save_sheet("res://assets/sprites/items.png", [LOG, DRY_GRASS, FLINT, FATWOOD, COAL, BIRCH_BARK, IRON_SHARD])
 	_save_sheet("res://assets/sprites/player.png", [PLAYER])
 	_save_sheet("res://assets/sprites/zombie.png", [ZOMBIE])
 	_save_sheet("res://assets/sprites/campfire.png", [CAMPFIRE])

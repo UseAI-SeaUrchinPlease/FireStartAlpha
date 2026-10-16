@@ -27,6 +27,7 @@ var _ended := false
 @onready var _time_label: Label = %TimeLabel
 @onready var _hp_label: Label = %HPLabel
 @onready var _inventory_label: Label = %InventoryLabel
+@onready var _requirement_label: Label = %RequirementLabel
 
 
 func _ready() -> void:
@@ -55,6 +56,7 @@ func _ready() -> void:
 	GameState.hp_changed.connect(_on_hp_changed)
 	_refresh_inventory()
 	_refresh_hp()
+	_refresh_requirements()
 
 	_day_timer.timeout.connect(_on_day_timer_timeout)
 	_day_timer.start(day_duration)
@@ -129,6 +131,13 @@ func _on_day_timer_timeout() -> void:
 
 func _refresh_hp() -> void:
 	_hp_label.text = "HP %d / %d" % [GameState.hp, GameState.max_hp]
+
+
+func _refresh_requirements() -> void:
+	var lines: PackedStringArray = ["今夜の必須素材"]
+	for requirement in GameState.tonight_requirements():
+		lines.append("  " + requirement.describe())
+	_requirement_label.text = "\n".join(lines)
 
 
 func _refresh_inventory() -> void:

@@ -1,7 +1,6 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scenes/phases/fire_phase.gd" id="1_script"]
-[ext_resource type="PackedScene" path="res://scenes/ui/FireSlot.tscn" id="2_slot"]
 [ext_resource type="Texture2D" path="res://assets/sprites/campfire.png" id="3_campfire"]
 
 [sub_resource type="Gradient" id="Gradient_flame"]
@@ -90,7 +89,7 @@ offset_right = 260.0
 offset_bottom = 110.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 6
 alignment = 1
 
 [node name="TitleLabel" type="Label" parent="UI/Root/Layout"]
@@ -98,21 +97,16 @@ unique_name_in_owner = true
 text = "1日目の夜   目標 100°"
 horizontal_alignment = 1
 
-[node name="Slots" type="HBoxContainer" parent="UI/Root/Layout"]
-theme_override_constants/separation = 16
-alignment = 1
-
-[node name="FuelSlot" parent="UI/Root/Layout/Slots" instance=ExtResource("2_slot")]
+[node name="Rows" type="VBoxContainer" parent="UI/Root/Layout"]
 unique_name_in_owner = true
-role = 1
+size_flags_horizontal = 4
+theme_override_constants/separation = 2
 
-[node name="TinderSlot" parent="UI/Root/Layout/Slots" instance=ExtResource("2_slot")]
+[node name="EmptyLabel" type="Label" parent="UI/Root/Layout"]
 unique_name_in_owner = true
-role = 2
-
-[node name="IgniterSlot" parent="UI/Root/Layout/Slots" instance=ExtResource("2_slot")]
-unique_name_in_owner = true
-role = 3
+visible = false
+text = "火起こしにつかえる素材がない"
+horizontal_alignment = 1
 
 [node name="PredictLabel" type="Label" parent="UI/Root/Layout"]
 unique_name_in_owner = true
@@ -128,8 +122,12 @@ theme_override_styles/fill = SubResource("StyleBoxFlat_gauge_fill")
 max_value = 100.0
 show_percentage = false
 
+[node name="RequirementLabel" type="Label" parent="UI/Root/Layout"]
+unique_name_in_owner = true
+horizontal_alignment = 1
+
 [node name="HintLabel" type="Label" parent="UI/Root/Layout"]
-text = "← →  えらぶ      ↑ ↓  かずをかえる      E  火をつける"
+text = "↑ ↓  えらぶ      ← →  かずをかえる      E  火をつける"
 horizontal_alignment = 1
 
 [node name="ResultLabel" type="Label" parent="UI/Root/Layout"]
