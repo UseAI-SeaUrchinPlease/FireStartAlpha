@@ -1,25 +1,49 @@
-name: Deploy web build to GitHub Pages
+name: Deploy site to GitHub Pages
 
+# サイト = ゲームの Web 版(ルート) + Issue 依存関係ページ(/deps/)。
+# Pages のデプロイはこの1本に集約する(concurrency で直列化され、互いに上書き・取り消しをしない)。
+# ゲームのビルドは main のコミットごとにキャッシュするので、Issue/PR イベントでは Godot を再ビルドしない。
 on:
   push:
     branches: [main, master]
+  issues:
+    types: [opened, edited, closed, reopened, deleted, transferred, assigned, unassigned]
+  # pull_request_target はデフォルトブランチ側のコードで動くので、PR の中身は実行されない。
+  # 書き込み系の権限を持つため、PR の head は checkout しないこと
+  pull_request_target:
+    types: [opened, reopened, closed, ready_for_review, converted_to_draft, edited]
+  schedule:
+    # 依存関係(blocked by)の変更は issues イベントで拾えないことがあるため、定期実行で補う
+    - cron: "17 */6 * * *"
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+  issues: read
+  pull-requests: read
 
 concurrency:
-  group: gh-pages-publish
+  group: pages
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Restore game build cache
+        id: game-cache
+        uses: actions/cache@v4
+        with:
+          path: build/game
+          key: game-web-${{ github.sha }}
+
       - name: Setup Godot
+        if: steps.game-cache.outputs.cache-hit != 'true'
         uses: chickensoft-games/setup-godot@v2
         with:
           version: 4.7.2
@@ -27,20 +51,41 @@ jobs:
           include-templates: true
 
       - name: Verify Godot version
+        if: steps.game-cache.outputs.cache-hit != 'true'
         run: godot --version
 
       - name: Import project resources
+        if: steps.game-cache.outputs.cache-hit != 'true'
         run: godot --headless --path . --import
 
       - name: Export web build
+        if: steps.game-cache.outputs.cache-hit != 'true'
         run: |
-          mkdir -p build/web
-          godot --headless --path . --export-release "Web" build/web/index.html
+          mkdir -p build/game
+          godot --headless --path . --export-release "Web" build/game/index.html
 
-      - name: Publish to gh-pages (root)
-        # deps/ は deps-page.yml が管理しているので keep_files で残す
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Assemble site
+        run: |
+          mkdir -p build/site
+          cp -r build/game/. build/site/
+
+      - name: Generate dependency page
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 -I tools/deps_page/build.py build/site/deps
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: build/web
-          keep_files: true
+          path: build/site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
