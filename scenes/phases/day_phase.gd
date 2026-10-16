@@ -31,7 +31,14 @@ var _ended := false
 
 
 func _ready() -> void:
-	var map := MapGenerator.generate(randi(), MAP_WIDTH, MAP_HEIGHT)
+	var blocks: Array[BlockData] = []
+	blocks.assign(DataDir.load_all("res://data/blocks"))
+	var items: Array[ItemData] = []
+	items.assign(DataDir.load_all("res://data/items"))
+	var variants: Array[BlockData] = []
+	variants.assign(blocks.filter(func(block: BlockData) -> bool: return block.replaces != &""))
+	var minimums := MaterialGuarantee.block_minimums(GameState.fire_requirements(), blocks, items)
+	var map := MapGenerator.generate(randi(), MAP_WIDTH, MAP_HEIGHT, variants, minimums)
 	_world.build(map)
 	_world.block_dug.connect(_on_block_dug)
 

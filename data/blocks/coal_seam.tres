@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BlockData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/block_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://data/items/coal.tres" id="2_item"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"coal_seam"
+display_name = "石炭の鉱脈"
+atlas_coords = Vector2i(7, 0)
+hardness = 1.6
+drop_item = ExtResource("2_item")
+drop_count = 1
+replaces = &"rock"
+replace_chance = 0.05
