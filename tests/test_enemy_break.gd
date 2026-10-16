@@ -18,6 +18,8 @@ func _run() -> void:
 		for y in map.height:
 			map.ground[Vector2i(x, y)] = &"grass_floor"
 	map.cells[Vector2i(4, 1)] = &"rock"
+	map.cells[Vector2i(4, 0)] = &"rock"
+	map.cells[Vector2i(4, 2)] = &"rock"
 	var world: GameWorld = WORLD_SCENE.instantiate()
 	add_child(world)
 	world.build(map)
@@ -30,6 +32,7 @@ func _run() -> void:
 	for i in 600:
 		await get_tree().physics_frame
 	_check(world.get_block(Vector2i(4, 1)) == null, "a brute breaks the block in its way")
+	_check(world.get_block(Vector2i(4, 0)) == null and world.get_block(Vector2i(4, 2)) == null, "a brute also breaks the blocks around it")
 	_check(brute.global_position.x > world.cell_center(Vector2i(4, 1)).x, "the brute walks through the gap")
 	_check(zombie.global_position.x > 0.0, "a zombie is spawned for comparison")
 

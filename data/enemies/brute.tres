@@ -17,4 +17,5 @@ attack_interval = 1.5
 knockback_threshold = 2
 knockback_speed = 60.0
 knockback_duration = 0.05
-break_speed = 0.5
+break_speed = 2.0
+break_radius = 1

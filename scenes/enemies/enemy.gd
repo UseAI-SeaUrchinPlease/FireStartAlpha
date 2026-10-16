@@ -73,7 +73,12 @@ func _update_breaking(delta: float) -> void:
 		_break_progress = 0.0
 	_break_progress += delta * data.break_speed
 	if _break_progress >= world.get_block(cell).hardness:
-		world.remove_block(cell)
+		for dx in range(-data.break_radius, data.break_radius + 1):
+			for dy in range(-data.break_radius, data.break_radius + 1):
+				var neighbor: Vector2i = _break_cell + Vector2i(dx, dy)
+				var block := world.get_block(neighbor)
+				if block != null and block.hardness > 0.0:
+					world.remove_block(neighbor)
 		Audio.play(&"break")
 		_break_progress = 0.0
 

@@ -17,3 +17,5 @@ extends Resource
 @export var knockback_duration: float = 0.15
 ## Seconds of continuous contact it takes to break a block, relative to its hardness; 0 means it cannot break blocks.
 @export var break_speed: float = 0.0
+## Breaking one block also breaks every diggable block within this many cells of it.
+@export var break_radius: int = 0
