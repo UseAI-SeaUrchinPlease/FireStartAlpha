@@ -17,7 +17,10 @@ var _resolved := false
 @onready var _result_label: Label = %ResultLabel
 @onready var _flame: CPUParticles2D = %Flame
 @onready var _smoke: CPUParticles2D = %Smoke
-@onready var _rows: VBoxContainer = %Rows
+@onready var _columns: Dictionary[ItemData.FireRole, VBoxContainer] = {
+	ItemData.FireRole.FUEL: %FuelColumn,
+	ItemData.FireRole.IGNITER: %IgniterColumn,
+}
 @onready var _empty_label: Label = %EmptyLabel
 @onready var _requirement_label: Label = %RequirementLabel
 
@@ -26,9 +29,11 @@ func _ready() -> void:
 	_requirements = GameState.tonight_requirements()
 	for item in _fire_items():
 		var slot: FireSlot = ROW_SCENE.instantiate()
-		_rows.add_child(slot)
+		_columns[item.fire_role].add_child(slot)
 		slot.setup(item, GameState.inventory[item])
 		_slots.append(slot)
+	for column: VBoxContainer in _columns.values():
+		column.visible = column.get_child_count() > 1
 	_empty_label.visible = _slots.is_empty()
 	_title_label.text = "%d日目の夜   目標 %d°" % [GameState.day, GameState.target_temperature()]
 	_temp_gauge.max_value = GameState.target_temperature()

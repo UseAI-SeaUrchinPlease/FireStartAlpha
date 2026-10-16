@@ -75,6 +75,13 @@ func dig_speed_multiplier() -> float:
 	return total
 
 
+func tool_level() -> int:
+	var total := 0
+	for upgrade: UpgradeData in upgrades:
+		total += upgrade.tool_level_bonus * upgrades[upgrade]
+	return total
+
+
 func upgrade_level(upgrade: UpgradeData) -> int:
 	return upgrades.get(upgrade, 0)
 

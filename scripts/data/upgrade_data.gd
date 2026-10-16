@@ -10,4 +10,5 @@ extends Resource
 @export var max_hp_bonus: int = 0
 @export var attack_bonus: int = 0
 @export var dig_speed_bonus: float = 0.0
+@export var tool_level_bonus: int = 0
 @export var heal: int = 0

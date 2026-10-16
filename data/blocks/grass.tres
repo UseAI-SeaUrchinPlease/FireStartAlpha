@@ -8,6 +8,6 @@ script = ExtResource("1_script")
 id = &"grass"
 display_name = "草むら"
 atlas_coords = Vector2i(2, 0)
-hardness = 0.3
+hits = 6
 drop_item = ExtResource("2_item")
 drop_count = 1

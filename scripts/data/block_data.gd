@@ -4,8 +4,10 @@ extends Resource
 @export var id: StringName
 @export var display_name: String
 @export var atlas_coords: Vector2i
-## Seconds of holding "dig" to break it; 0 means it can never be dug.
-@export var hardness: float = 0.5
+## 壊すのに必要な叩く回数。0 なら掘れない(外周の岩壁など)。
+@export var hits: int = 10
+## これ未満の道具レベルでは叩いても掘れない (DEVELOPMENT.md 8.4)。
+@export var required_tool_level: int = 0
 @export var drop_item: ItemData
 @export var drop_count: int = 1
 @export_group("Rare placement")

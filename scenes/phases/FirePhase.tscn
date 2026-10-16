@@ -97,10 +97,23 @@ unique_name_in_owner = true
 text = "1日目の夜   目標 100°"
 horizontal_alignment = 1
 
-[node name="Rows" type="VBoxContainer" parent="UI/Root/Layout"]
-unique_name_in_owner = true
+[node name="Columns" type="HBoxContainer" parent="UI/Root/Layout"]
 size_flags_horizontal = 4
+theme_override_constants/separation = 24
+
+[node name="FuelColumn" type="VBoxContainer" parent="UI/Root/Layout/Columns"]
+unique_name_in_owner = true
 theme_override_constants/separation = 2
+
+[node name="Header" type="Label" parent="UI/Root/Layout/Columns/FuelColumn"]
+text = "燃料"
+
+[node name="IgniterColumn" type="VBoxContainer" parent="UI/Root/Layout/Columns"]
+unique_name_in_owner = true
+theme_override_constants/separation = 2
+
+[node name="Header" type="Label" parent="UI/Root/Layout/Columns/IgniterColumn"]
+text = "着火"
 
 [node name="EmptyLabel" type="Label" parent="UI/Root/Layout"]
 unique_name_in_owner = true

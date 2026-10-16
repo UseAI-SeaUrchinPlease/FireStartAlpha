@@ -12,7 +12,6 @@ var focused := false:
 		focused = value
 		_refresh()
 
-@onready var _role_label: Label = %RoleLabel
 @onready var _item_label: Label = %ItemLabel
 @onready var _count_label: Label = %CountLabel
 
@@ -36,7 +35,6 @@ func change_count(delta: int) -> void:
 func _refresh() -> void:
 	if not is_node_ready() or item == null:
 		return
-	_role_label.text = ItemData.ROLE_NAMES[item.fire_role]
 	_item_label.text = "%s (%d°)" % [item.display_name, int(item.heat)]
 	_count_label.text = "%d / %d" % [count, available]
 	modulate = FOCUSED_COLOR if focused else Color.WHITE
