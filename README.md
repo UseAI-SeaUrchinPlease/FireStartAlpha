@@ -2,6 +2,8 @@
 
 火起こしをモチーフにした2Dローグライク。設計の全体像は [DEVELOPMENT.md](DEVELOPMENT.md) を参照してください。
 
+Issue の依存関係と、今着手できるタスクは [依存関係マップ](https://useai-seaurchinplease.github.io/FireStartAlpha/deps/) で確認できます(自動更新)。
+
 ## 操作方法
 
 | 操作 | キーボード | ゲームパッド |
@@ -25,5 +27,5 @@
 - テストは `tests/` にヘッドレスで実行できる形で置いています。`extends SceneTree` のものは `godot --headless --path . --script res://tests/xxx.gd`、Autoload に依存するものは `.tscn` にして `godot --headless --path . res://tests/Xxx.tscn` で実行してください
 - レンダラーはデスクトップ/エディタが Forward+、Web 書き出しのみ `gl_compatibility`(`project.godot` の `renderer/rendering_method.web` で上書き)。Web は Forward+ 非対応なので変更時は注意
 - 日本語テキストは `assets/fonts/DotGothic16-Regular.ttf` を `gui/theme/custom_font` に設定して表示しています。外すと日本語が文字化け(豆腐)します
-- `main`/`master` に push すると GitHub Actions (`.github/workflows/deploy-web.yml`) が自動でWeb版をビルドし GitHub Pages に公開します
+- `main`/`master` に push すると GitHub Actions (`.github/workflows/deploy-web.yml`) が自動でWeb版をビルドし `gh-pages` ブランチへ公開します(GitHub Pages の公開元は `gh-pages` ブランチ)。`gh-pages` の `deps/` は `deps-page.yml` が管理するページなので触らないでください
 - 設計や仕様に変更がある場合は `DEVELOPMENT.md` を正として更新してください
