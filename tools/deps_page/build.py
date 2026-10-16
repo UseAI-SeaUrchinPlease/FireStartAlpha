@@ -15,11 +15,12 @@ REPO = os.environ["GITHUB_REPOSITORY"]
 TOKEN = os.environ.get("GITHUB_TOKEN", "")
 
 
-def get(path):
-    """ページネーションをたどって全件取得する。"""
+def get(path, max_pages=None):
+    """ページネーションをたどって取得する(max_pages で打ち切り可)。"""
     url = f"{API}{path}{'&' if '?' in path else '?'}per_page=100"
-    items = []
+    items, pages = [], 0
     while url:
+        pages += 1
         req = urllib.request.Request(url, headers={
             "Accept": "application/vnd.github+json",
             "X-GitHub-Api-Version": "2022-11-28",
@@ -28,6 +29,8 @@ def get(path):
         with urllib.request.urlopen(req) as res:
             items += json.load(res)
             url = None
+            if max_pages and pages >= max_pages:
+                break
             for part in res.headers.get("Link", "").split(","):
                 if 'rel="next"' in part:
                     url = part[part.index("<") + 1:part.index(">")]
@@ -81,7 +84,8 @@ def collect_prs():
 
 def collect_done():
     """最近クローズされた Issue(実装済みのもの。not planned は除く)。"""
-    closed = get(f"/repos/{REPO}/issues?state=closed&sort=updated&direction=desc")
+    # 更新順の先頭1ページ(100件)あれば直近 DONE_LIMIT 件には十分
+    closed = get(f"/repos/{REPO}/issues?state=closed&sort=updated&direction=desc", max_pages=1)
     done = [i for i in closed
             if "pull_request" not in i and i.get("state_reason") != "not_planned"
             and not i["title"].startswith("[管理]")]
