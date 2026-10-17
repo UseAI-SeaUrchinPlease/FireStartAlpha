@@ -1,0 +1,69 @@
+# preview/all-features ブランチ専用。main の版をサイトのトップに、
+# 全部入りのプレビュー版を /preview/ に置いて GitHub Pages に公開する。
+# main に push があると deploy-web.yml がサイト全体を作り直すため /preview/ は消える。
+# その場合は tools/update_preview.sh を実行し直して載せ直す。
+name: Deploy preview build to GitHub Pages
+
+on:
+  push:
+    branches: [preview/all-features]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout preview
+        uses: actions/checkout@v4
+        with:
+          path: preview
+
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: stable
+
+      - name: Setup Godot
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.7.2
+          use-dotnet: false
+          include-templates: true
+
+      - name: Export main build to the site root
+        run: |
+          mkdir -p build/web
+          godot --headless --path stable --import
+          godot --headless --path stable --export-release "Web" "$GITHUB_WORKSPACE/build/web/index.html"
+
+      - name: Export preview build to /preview/
+        run: |
+          mkdir -p build/web/preview
+          godot --headless --path preview --import
+          godot --headless --path preview --export-release "Web" "$GITHUB_WORKSPACE/build/web/preview/index.html"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
