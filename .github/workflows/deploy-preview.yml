@@ -1,7 +1,7 @@
 # preview/all-features ブランチ専用。main の版をサイトのトップに、
 # 全部入りのプレビュー版を /preview/ に置いて GitHub Pages に公開する。
 # main に push があると deploy-web.yml がサイト全体を作り直すため /preview/ は消える。
-# その場合は tools/update_preview.sh を実行し直して載せ直す。
+# その場合は tools/update_preview.sh を実行し直すと、このワークフローを手動で起動して載せ直す。
 name: Deploy preview build to GitHub Pages
 
 on:
