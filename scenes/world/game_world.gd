@@ -3,7 +3,10 @@ extends Node2D
 
 signal block_dug(cell: Vector2i, block: BlockData)
 
+enum HitResult { NONE, BLOCKED, HIT, BROKEN }
+
 const TILE_SIZE := 16
+const HIT_RESET_TIME := 2.0
 const GROUND_ATLAS: Dictionary[StringName, Vector2i] = {
 	&"grass_floor": Vector2i(0, 0),
 	&"dirt_floor": Vector2i(1, 0),
@@ -16,8 +19,14 @@ var map: MapData
 ## (敵ごとに経路探索すると数が増えた時に重くなるため、1つだけ計算して
 ## 全敵で共有する。issue #7)。セルごとの移動方向(単位ベクトル)を持つ。
 var flow_field: Dictionary[Vector2i, Vector2] = {}
+## 叩いた回数の期限切れ判定に使う経過秒数。テストから時間を進められるよう公開している。
+var clock := 0.0
 
 var _blocks_by_id: Dictionary[StringName, BlockData] = {}
+## 叩いた回数はマスごとに持ち、最後に叩いてから HIT_RESET_TIME 経つと 0 に戻す。
+## 別のマスに移っても時間内に戻れば続きから掘れる (DEVELOPMENT.md 8.5)。
+var _hits: Dictionary[Vector2i, int] = {}
+var _last_hit_at: Dictionary[Vector2i, float] = {}
 
 @onready var _ground: TileMapLayer = %Ground
 @onready var _blocks: TileMapLayer = %Blocks
@@ -27,6 +36,10 @@ func _ready() -> void:
 	for resource in DataDir.load_all("res://data/blocks"):
 		var block := resource as BlockData
 		_blocks_by_id[block.id] = block
+
+
+func _physics_process(delta: float) -> void:
+	clock += delta
 
 
 func build(map_data: MapData) -> void:
@@ -44,11 +57,34 @@ func get_block(cell: Vector2i) -> BlockData:
 	return _blocks_by_id.get(id)
 
 
+func hit(cell: Vector2i, tool_level: int) -> HitResult:
+	var block := get_block(cell)
+	if block == null or block.hits <= 0:
+		return HitResult.NONE
+	if block.required_tool_level > tool_level:
+		return HitResult.BLOCKED
+	var count := hit_count(cell) + 1
+	if count >= block.hits:
+		dig(cell)
+		return HitResult.BROKEN
+	_hits[cell] = count
+	_last_hit_at[cell] = clock
+	return HitResult.HIT
+
+
+func hit_count(cell: Vector2i) -> int:
+	if not _last_hit_at.has(cell) or clock - _last_hit_at[cell] > HIT_RESET_TIME:
+		return 0
+	return _hits[cell]
+
+
 func dig(cell: Vector2i) -> void:
 	var block := get_block(cell)
 	if block == null:
 		return
 	map.cells.erase(cell)
+	_hits.erase(cell)
+	_last_hit_at.erase(cell)
 	_blocks.erase_cell(cell)
 	block_dug.emit(cell, block)
 
@@ -56,6 +92,8 @@ func dig(cell: Vector2i) -> void:
 ## Removes a block without emitting block_dug, so nothing drops.
 func remove_block(cell: Vector2i) -> void:
 	map.cells.erase(cell)
+	_hits.erase(cell)
+	_last_hit_at.erase(cell)
 	_blocks.erase_cell(cell)
 
 

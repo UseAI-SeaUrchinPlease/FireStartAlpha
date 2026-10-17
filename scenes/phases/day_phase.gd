@@ -41,10 +41,18 @@ var _last_flow_field_cell := Vector2i.ZERO
 @onready var _time_label: Label = %TimeLabel
 @onready var _hp_label: Label = %HPLabel
 @onready var _inventory_label: Label = %InventoryLabel
+@onready var _requirement_label: Label = %RequirementLabel
 
 
 func _ready() -> void:
-	var map := MapGenerator.generate(map_seed if map_seed >= 0 else randi(), MAP_WIDTH, MAP_HEIGHT)
+	var blocks: Array[BlockData] = []
+	blocks.assign(DataDir.load_all("res://data/blocks"))
+	var items: Array[ItemData] = []
+	items.assign(DataDir.load_all("res://data/items"))
+	var variants: Array[BlockData] = []
+	variants.assign(blocks.filter(func(block: BlockData) -> bool: return block.replaces != &""))
+	var minimums := MaterialGuarantee.block_minimums(GameState.fire_requirements(), blocks, items)
+	var map := MapGenerator.generate(map_seed if map_seed >= 0 else randi(), MAP_WIDTH, MAP_HEIGHT, variants, minimums)
 	_world.build(map)
 	_world.block_dug.connect(_on_block_dug)
 
@@ -76,6 +84,7 @@ func _ready() -> void:
 	GameState.hp_changed.connect(_on_hp_changed)
 	_refresh_inventory()
 	_refresh_hp()
+	_refresh_requirements()
 
 	_day_timer.timeout.connect(_on_day_timer_timeout)
 	_day_timer.start(day_duration)
@@ -173,6 +182,13 @@ func _on_day_timer_timeout() -> void:
 
 func _refresh_hp() -> void:
 	_hp_label.text = "HP %d / %d" % [GameState.hp, GameState.max_hp]
+
+
+func _refresh_requirements() -> void:
+	var lines: PackedStringArray = ["今夜の必須素材"]
+	for requirement in GameState.tonight_requirements():
+		lines.append("  " + requirement.describe())
+	_requirement_label.text = "\n".join(lines)
 
 
 func _refresh_inventory() -> void:

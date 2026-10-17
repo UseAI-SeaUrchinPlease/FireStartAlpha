@@ -93,15 +93,21 @@ func _update_breaking(delta: float) -> void:
 		_break_cell = cell as Vector2i
 		_break_progress = 0.0
 	_break_progress += delta * data.break_speed
-	if _break_progress >= world.get_block(cell).hardness:
+	if _break_progress >= _break_time(world.get_block(cell)):
 		for dx in range(-data.break_radius, data.break_radius + 1):
 			for dy in range(-data.break_radius, data.break_radius + 1):
 				var neighbor: Vector2i = _break_cell + Vector2i(dx, dy)
 				var block := world.get_block(neighbor)
-				if block != null and block.hardness > 0.0:
+				if block != null and block.hits > 0:
 					world.remove_block(neighbor)
 		Audio.play(&"break")
 		_break_progress = 0.0
+
+
+## プレビュー統合 (#8 + #9): #9 で BlockData の hardness(秒)が叩く回数に変わったため、
+## プレイヤーが強化なしで壊すのにかかる秒数を「硬さ」とみなす。道具レベルは無視する。
+func _break_time(block: BlockData) -> float:
+	return block.hits * Player.DIG_INTERVAL
 
 
 ## The diggable block the enemy is currently pushing against, or null.
@@ -113,6 +119,6 @@ func _blocking_cell() -> Variant:
 		# Step slightly into the obstacle so the point lands inside the block's cell.
 		var cell := world.cell_at(collision.get_position() - collision.get_normal())
 		var block := world.get_block(cell)
-		if block != null and block.hardness > 0.0:
+		if block != null and block.hits > 0:
 			return cell
 	return null

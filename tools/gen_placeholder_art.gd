@@ -88,6 +88,78 @@ const ROCK: PackedStringArray = [
 	"................",
 	"................",
 ]
+const BIRCH: PackedStringArray = [
+	"....zzzzzzz.....",
+	"...zzYYYYYzz....",
+	"..zzYYYyyYYYzz..",
+	".zzYYyyyyyYYYzz.",
+	".zYYyyyyyyYYYYz.",
+	".zYYYyyyyYYYYYz.",
+	".zzYYYYYYYYYzzz.",
+	"..zzYYYYYYYYzz..",
+	"...zzzYYYYzzz...",
+	".....zzffzz.....",
+	".......fK.......",
+	".......fK.......",
+	".......fK.......",
+	"......ffKK......",
+	"....zzzzzzzz....",
+	"................",
+]
+const PINE: PackedStringArray = [
+	".......D........",
+	"......DnD.......",
+	".....DnnnD......",
+	"....DnnDnnD.....",
+	"......DnD.......",
+	".....DnnnD......",
+	"....DnnnnnD.....",
+	"...DnnDnnnnD....",
+	".....DnnnD......",
+	"....DnnnnnD.....",
+	"...DnnnnnnnD....",
+	"..DnnnnDnnnnD...",
+	".......tT.......",
+	"......ttTT......",
+	"....DDDDDDDD....",
+	"................",
+]
+const IRON_ORE: PackedStringArray = [
+	"................",
+	"................",
+	".....KKKKK......",
+	"...KKRRrrRKK....",
+	"..KRRorrRoRRK...",
+	".KRRrrORRoRRSK..",
+	".KRRoRRRRRRoSK..",
+	".KRRRRRRoOSSSK..",
+	".KSRRORRRSSoSK..",
+	"..KSSRoRSSSSK...",
+	"...KKSSSSSKK....",
+	".....KKKKK......",
+	"................",
+	"................",
+	"................",
+	"................",
+]
+const COAL_SEAM: PackedStringArray = [
+	"................",
+	"................",
+	".....KKKKK......",
+	"...KKRRrrRKK....",
+	"..KRRkrrRkRRK...",
+	".KRRrrMRRkMRSK..",
+	".KRRkRRRRRRkSK..",
+	".KRRRRRRkMSSSK..",
+	".KSRRMRRRSSkSK..",
+	"..KSSRkRSSSSK...",
+	"...KKSSSSSKK....",
+	".....KKKKK......",
+	"................",
+	"................",
+	"................",
+	"................",
+]
 const GRASS_TUFT: PackedStringArray = [
 	"................",
 	"................",
@@ -152,6 +224,46 @@ const FLINT: PackedStringArray = [
 	".RRRRSS.",
 	"..RSSS..",
 	"...SS...",
+	"........",
+]
+const FATWOOD: PackedStringArray = [
+	"........",
+	"......Q.",
+	".....QqQ",
+	"....QqO.",
+	"...Qqq..",
+	"..qqO...",
+	".dqO....",
+	"..d.....",
+]
+const COAL: PackedStringArray = [
+	"........",
+	"...HH...",
+	"..HkkM..",
+	".HkkkkM.",
+	".kkkHkM.",
+	".MkkkMM.",
+	"..MMMM..",
+	"........",
+]
+const BIRCH_BARK: PackedStringArray = [
+	"........",
+	"..ffff..",
+	".fKfffe.",
+	".fffKfe.",
+	".eKfffe.",
+	"..eeee..",
+	"...e....",
+	"........",
+]
+const IRON_SHARD: PackedStringArray = [
+	"........",
+	"....rr..",
+	"...rPPS.",
+	"..rPPPS.",
+	".rPPPS..",
+	".PPPS...",
+	"..SS....",
 	"........",
 ]
 const PLAYER: PackedStringArray = [
@@ -264,8 +376,8 @@ const CAMPFIRE: PackedStringArray = [
 
 func _init() -> void:
 	_save_sheet("res://assets/sprites/ground.png", [GRASS_FLOOR, DIRT_FLOOR])
-	_save_sheet("res://assets/sprites/blocks.png", [TREE, ROCK, GRASS_TUFT, WALL])
-	_save_sheet("res://assets/sprites/items.png", [LOG, DRY_GRASS, FLINT])
+	_save_sheet("res://assets/sprites/blocks.png", [TREE, ROCK, GRASS_TUFT, WALL, BIRCH, PINE, IRON_ORE, COAL_SEAM])
+	_save_sheet("res://assets/sprites/items.png", [LOG, DRY_GRASS, FLINT, FATWOOD, COAL, BIRCH_BARK, IRON_SHARD])
 	_save_sheet("res://assets/sprites/player.png", [PLAYER])
 	_save_sheet("res://assets/sprites/zombie.png", [ZOMBIE])
 	_save_sheet("res://assets/sprites/runner.png", [RUNNER])

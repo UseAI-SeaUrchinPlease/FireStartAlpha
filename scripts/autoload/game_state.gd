@@ -14,6 +14,8 @@ var fire_points: int = 0
 var inventory: Dictionary[ItemData, int] = {}
 var upgrades: Dictionary[UpgradeData, int] = {}
 
+var _fire_requirements: Array[FireRequirement] = []
+
 
 func reset() -> void:
 	day = 1
@@ -43,6 +45,22 @@ func target_temperature() -> float:
 	return BASE_TARGET_TEMPERATURE + TARGET_TEMPERATURE_PER_DAY * (day - 1)
 
 
+## data/fire_requirements の全条件(有効日に関係なく)。初回呼び出し時に読み込む。
+func fire_requirements() -> Array[FireRequirement]:
+	if _fire_requirements.is_empty():
+		for resource in DataDir.load_all("res://data/fire_requirements"):
+			_fire_requirements.append(resource as FireRequirement)
+	return _fire_requirements
+
+
+func tonight_requirements() -> Array[FireRequirement]:
+	return FireCalculator.active_requirements(fire_requirements(), day)
+
+
+func upcoming_requirements() -> Array[FireRequirement]:
+	return FireCalculator.upcoming_requirements(fire_requirements(), day)
+
+
 func attack_damage() -> int:
 	var total := 1
 	for upgrade: UpgradeData in upgrades:
@@ -54,6 +72,13 @@ func dig_speed_multiplier() -> float:
 	var total := 1.0
 	for upgrade: UpgradeData in upgrades:
 		total += upgrade.dig_speed_bonus * upgrades[upgrade]
+	return total
+
+
+func tool_level() -> int:
+	var total := 0
+	for upgrade: UpgradeData in upgrades:
+		total += upgrade.tool_level_bonus * upgrades[upgrade]
 	return total
 
 
