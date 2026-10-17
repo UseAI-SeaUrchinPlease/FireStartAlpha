@@ -9,6 +9,7 @@ signal died
 
 const HIT_FLASH_COLOR := Color(4.0, 4.0, 4.0)
 const HIT_FLASH_DURATION := 0.12
+const HITS_PER_HARDNESS := 20.0
 
 var data: EnemyData
 var target: Node2D
@@ -105,9 +106,10 @@ func _update_breaking(delta: float) -> void:
 
 
 ## プレビュー統合 (#8 + #9): #9 で BlockData の hardness(秒)が叩く回数に変わったため、
-## プレイヤーが強化なしで壊すのにかかる秒数を「硬さ」とみなす。道具レベルは無視する。
+## 叩く回数を HITS_PER_HARDNESS で割った値を「硬さ」とみなし、#8 の元の速さに合わせる
+## (草むら 6回→0.3、木 14回→0.7、岩 20回→1.0。元は 0.3 / 0.6 / 1.0)。道具レベルは無視する。
 func _break_time(block: BlockData) -> float:
-	return block.hits * Player.DIG_INTERVAL
+	return block.hits / HITS_PER_HARDNESS
 
 
 ## The diggable block the enemy is currently pushing against, or null.
