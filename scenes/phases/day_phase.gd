@@ -59,7 +59,9 @@ func _ready() -> void:
 	var max_aggro_range := 0.0
 	for resource in DataDir.load_all("res://data/enemies"):
 		var enemy_type := resource as EnemyData
-		max_aggro_range = maxf(max_aggro_range, enemy_type.aggro_range)
+		# ブロックを壊す敵はフローフィールドを使わず直進するので、計算範囲に含めない
+		if enemy_type.break_speed <= 0.0:
+			max_aggro_range = maxf(max_aggro_range, enemy_type.aggro_range)
 		if enemy_type.min_day <= GameState.day:
 			_enemy_types.append(enemy_type)
 	_flow_field_radius = ceili(max_aggro_range / GameWorld.TILE_SIZE) + FLOW_FIELD_RADIUS_MARGIN
