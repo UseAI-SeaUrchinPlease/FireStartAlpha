@@ -1,5 +1,5 @@
 class_name BlockData
-extends Resource
+extends TileObjectData
 
 @export var id: StringName
 @export var display_name: String

@@ -13,3 +13,7 @@ damage = 1
 speed = 45.0
 aggro_range = 180.0
 min_day = 1
+hp_growth_per_day = 1.0
+speed_growth_per_day = 5.0
+damage_growth_per_day = 0.3
+max_speed = 80.0
