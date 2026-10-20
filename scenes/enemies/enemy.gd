@@ -21,6 +21,7 @@ var _speed: float
 var _damage: int
 var _knockback := Vector2.ZERO
 var _knockback_left := 0.0
+var _chasing := false
 
 @onready var _sprite: Sprite2D = %Sprite
 @onready var _hitbox: Area2D = %Hitbox
@@ -52,8 +53,13 @@ func _physics_process(delta: float) -> void:
 ## 重くなるため、DayPhase が計算した共有のフローフィールドを参照するだけに
 ## している (issue #7)。異なる動きをする敵種はこのメソッドを上書きする。
 func _compute_velocity() -> Vector2:
-	if target == null or global_position.distance_to(target.global_position) > data.aggro_range:
+	if target == null:
 		return Vector2.ZERO
+	# 一度追い始めたら追い続ける。障害物を迂回する途中で直線距離が aggro_range を
+	# 超えた瞬間に止まってしまわないため。
+	if not _chasing and global_position.distance_to(target.global_position) > data.aggro_range:
+		return Vector2.ZERO
+	_chasing = true
 	var cell := world.cell_at(global_position)
 	# 軸方向の単位ベクトルではなく次のセルの中心へ向かうことで、列からずれたまま
 	# 進んで障害物の角に正面からぶつかって止まるのを防ぐ (PR #11 レビュー)。

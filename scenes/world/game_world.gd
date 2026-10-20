@@ -10,7 +10,11 @@ const GROUND_ATLAS: Dictionary[StringName, Vector2i] = {
 }
 
 const FLOW_FIELD_DIRECTIONS: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
-const FLOW_FIELD_DIAGONALS: Array[Vector2i] = [Vector2i(1, 1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(-1, -1)]
+## 次に進むセルの候補。4方向 + 斜め。セルごとに配列を作り直さないよう定数にしている。
+const FLOW_FIELD_NEIGHBORS: Array[Vector2i] = [
+	Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1),
+	Vector2i(1, 1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(-1, -1),
+]
 const DEBUG_ARROW_COLOR := Color(1.0, 0.2, 0.8, 0.8)
 
 ## エディタでオンにすると、フローフィールドの向きを各マスに矢印で描く(デバッグ用)。
@@ -116,7 +120,7 @@ func compute_flow_field(goal_cell: Vector2i, radius: int) -> Dictionary[Vector2i
 			continue
 		var best_step := Vector2i.ZERO
 		var best_distance: int = distances[cell]
-		for dir in FLOW_FIELD_DIRECTIONS + FLOW_FIELD_DIAGONALS:
+		for dir in FLOW_FIELD_NEIGHBORS:
 			var neighbor := cell + dir
 			if not distances.has(neighbor) or distances[neighbor] >= best_distance:
 				continue
