@@ -19,8 +19,15 @@ func _run() -> void:
 	await get_tree().physics_frame
 	await get_tree().physics_frame
 
-	_check(phase.enemy_count() == 2, "day 1 starts with two enemies")
+	_check(phase.enemy_count() == 3, "day 1 starts with three enemies")
+	_check(phase._max_concurrent_enemies() == 6 and is_equal_approx(phase._spawn_interval(), 12.0), "day 1 allows 6 enemies and spawns every 12 seconds")
 	_check(outcome[0] == "", "the phase is still running after spawning")
+
+	# フィールドが空(=歩いて行けるセルがない)なら、ブロックのないセルがあっても湧かない
+	var day1_world: GameWorld = phase.get_node("%World")
+	day1_world.flow_field = {}
+	phase._spawn_enemy()
+	_check(phase.enemy_count() == 3, "an enemy is never placed on a cell that cannot walk to the player")
 
 	GameState.damage(GameState.hp)
 	_check(outcome[0] == "failed", "reaching 0 HP fails the phase")
@@ -32,7 +39,39 @@ func _run() -> void:
 	add_child(phase)
 	await get_tree().physics_frame
 	await get_tree().physics_frame
-	_check(phase.enemy_count() == 4, "day 3 starts with four enemies")
+	_check(phase.enemy_count() == 7, "day 3 starts with seven enemies")
+	_check(is_equal_approx(phase._spawn_interval(), 9.0), "the spawn interval shrinks by 1.5 seconds a day")
+	phase.queue_free()
+
+	GameState.reset()
+	GameState.day = 20
+	phase = DAY_PHASE.instantiate()
+	phase.map_seed = 12345 # 20体全てのスポーン成否が運任せにならないよう固定する
+	add_child(phase)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	_check(phase.enemy_count() == 20, "initial spawn is clamped to CAP_MAX on a late day instead of growing unbounded")
+	_check(is_equal_approx(phase._spawn_interval(), 4.0), "the spawn interval bottoms out at 4 seconds")
+	var world: GameWorld = phase.get_node("%World")
+	var all_reachable := true
+	for child in world.get_children():
+		if child is Enemy:
+			all_reachable = all_reachable and world.flow_field.has(world.cell_at(child.global_position))
+	_check(all_reachable, "enemies only spawn on cells that can walk to the player")
+
+	var dug_cell := Vector2i(-1, -1)
+	for cell: Vector2i in world.map.cells:
+		var block := world.get_block(cell)
+		var from_player: Vector2i = cell - world.cell_at(phase.get_node("%Player").global_position)
+		var inside_radius: bool = absi(from_player.x) < phase._flow_field_radius and absi(from_player.y) < phase._flow_field_radius
+		if inside_radius and block.hardness > 0.0 and world.flow_field.has(cell + Vector2i(1, 0)) and not world.flow_field.has(cell):
+			dug_cell = cell
+			break
+	phase._recompute_flow_field() # クールダウン中に掘っても、明けた後に反映されること
+	world.dig(dug_cell)
+	_check(not world.flow_field.has(dug_cell), "the dug cell waits for the shared cooldown")
+	await get_tree().create_timer(0.3).timeout
+	_check(world.flow_field.has(dug_cell), "digging a block puts its cell into the flow field without the player moving")
 	phase.queue_free()
 
 	if _failures == 0:
