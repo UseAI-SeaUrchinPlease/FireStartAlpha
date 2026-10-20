@@ -7,6 +7,10 @@ const GOAL_CELL := Vector2i(4, 1)
 const NEAR_CELL := Vector2i(4, 2)
 const FAR_CELL := Vector2i(1, 7)
 const BOXED_CELL := Vector2i(7, 7)
+## 壁より上の開けた場所。ゴールへは斜め (-1, -1) に進める
+const OPEN_CELL := Vector2i(7, 3)
+## 隙間の右下。斜め (-1, -1) は隙間に入れるが、右隣 (5, 4) が岩なので角をかすめる
+const CORNER_CELL := Vector2i(5, 5)
 
 var _failures := 0
 
@@ -25,9 +29,12 @@ func _run() -> void:
 	var wide_field := world.compute_flow_field(GOAL_CELL, 20)
 	_check(
 		_walk_to_goal(world, wide_field, FAR_CELL, GOAL_CELL),
-		"flow field routes around the wall through the gap instead of walking into a block"
+		"flow field routes around the wall through the gap without walking into or clipping a block"
 	)
 	_check(not wide_field.has(BOXED_CELL), "a cell fully enclosed by blocks has no direction (unreachable)")
+
+	_check(wide_field[OPEN_CELL] == Vector2i(-1, -1), "in open ground the field steps diagonally toward the goal (got %s)" % wide_field[OPEN_CELL])
+	_check(wide_field[CORNER_CELL] == Vector2i(-1, 0), "a diagonal that would clip a block corner is replaced by a straight step (got %s)" % wide_field[CORNER_CELL])
 
 	var narrow_field := world.compute_flow_field(GOAL_CELL, 2)
 	_check(narrow_field.has(NEAR_CELL), "a cell within the radius is included in the field")
@@ -67,8 +74,17 @@ func _walk_to_goal(world: GameWorld, field: Dictionary, start: Vector2i, goal: V
 		var block := world.get_block(current)
 		if block != null and block.blocks_movement():
 			return false
-		current += Vector2i(field[current])
+		var step: Vector2i = field[current]
+		if step.x != 0 and step.y != 0:
+			if _blocked(world, current + Vector2i(step.x, 0)) or _blocked(world, current + Vector2i(0, step.y)):
+				return false
+		current += step
 	return false
+
+
+func _blocked(world: GameWorld, cell: Vector2i) -> bool:
+	var block := world.get_block(cell)
+	return block != null and block.blocks_movement()
 
 
 func _check(condition: bool, message: String) -> void:

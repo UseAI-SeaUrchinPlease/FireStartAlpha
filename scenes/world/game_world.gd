@@ -10,14 +10,24 @@ const GROUND_ATLAS: Dictionary[StringName, Vector2i] = {
 }
 
 const FLOW_FIELD_DIRECTIONS: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+const FLOW_FIELD_DIAGONALS: Array[Vector2i] = [Vector2i(1, 1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(-1, -1)]
+const DEBUG_ARROW_COLOR := Color(1.0, 0.2, 0.8, 0.8)
+
+## エディタでオンにすると、フローフィールドの向きを各マスに矢印で描く(デバッグ用)。
+@export var debug_draw_flow_field := false
 
 var map: MapData
 ## プレイヤー中心のフローフィールド。DayPhase が定期的に計算して更新する
 ## (敵ごとに経路探索すると数が増えた時に重くなるため、1つだけ計算して
-## 全敵で共有する。issue #7)。セルごとの移動方向(単位ベクトル)を持つ。
-var flow_field: Dictionary[Vector2i, Vector2] = {}
+## 全敵で共有する。issue #7)。セルごとに、次に進む隣のセルへのオフセットを持つ。
+var flow_field: Dictionary[Vector2i, Vector2i] = {}:
+	set(value):
+		flow_field = value
+		if _debug_layer != null:
+			_debug_layer.queue_redraw()
 
 var _blocks_by_id: Dictionary[StringName, BlockData] = {}
+var _debug_layer: Node2D
 
 @onready var _ground: TileMapLayer = %Ground
 @onready var _blocks: TileMapLayer = %Blocks
@@ -27,6 +37,11 @@ func _ready() -> void:
 	for resource in DataDir.load_all("res://data/blocks"):
 		var block := resource as BlockData
 		_blocks_by_id[block.id] = block
+	if debug_draw_flow_field:
+		_debug_layer = Node2D.new()
+		_debug_layer.z_index = 100
+		_debug_layer.draw.connect(_draw_flow_field)
+		add_child(_debug_layer)
 
 
 func build(map_data: MapData) -> void:
@@ -70,9 +85,13 @@ func pixel_size() -> Vector2:
 
 
 ## goal_cell を起点にBFS(4方向)でコスト場を作り、各セルから見て
-## ゴールに最も近づく隣接セルへの方向を返す。radius は goal_cell からの
-## タイル数(正方形範囲)で、マップ全体を毎回舐めないための範囲制限。
-func compute_flow_field(goal_cell: Vector2i, radius: int) -> Dictionary[Vector2i, Vector2]:
+## ゴールに最も近づく隣接セル(斜めを含む)へのオフセットを返す。
+## radius は goal_cell からのタイル数(正方形範囲)で、マップ全体を毎回舐めないための範囲制限。
+##
+## 距離は4方向で測るので、斜めの隣は「2歩先」になり、斜めに進めるときは自然に斜めが選ばれる
+## (L字のカクカクした動きを避ける)。角をかすめて障害物に引っかからないよう、
+## 斜めは両脇の2マスがどちらも通れるときだけ許す (PR #11 レビュー)。
+func compute_flow_field(goal_cell: Vector2i, radius: int) -> Dictionary[Vector2i, Vector2i]:
 	var distances: Dictionary[Vector2i, int] = {goal_cell: 0}
 	var queue: Array[Vector2i] = [goal_cell]
 	var head := 0
@@ -91,17 +110,29 @@ func compute_flow_field(goal_cell: Vector2i, radius: int) -> Dictionary[Vector2i
 			distances[neighbor] = distances[current] + 1
 			queue.append(neighbor)
 
-	var field: Dictionary[Vector2i, Vector2] = {}
+	var field: Dictionary[Vector2i, Vector2i] = {}
 	for cell: Vector2i in distances:
 		if cell == goal_cell:
 			continue
-		var best_neighbor := cell
+		var best_step := Vector2i.ZERO
 		var best_distance: int = distances[cell]
-		for dir in FLOW_FIELD_DIRECTIONS:
+		for dir in FLOW_FIELD_DIRECTIONS + FLOW_FIELD_DIAGONALS:
 			var neighbor := cell + dir
-			if distances.has(neighbor) and distances[neighbor] < best_distance:
-				best_distance = distances[neighbor]
-				best_neighbor = neighbor
-		if best_neighbor != cell:
-			field[cell] = Vector2(best_neighbor - cell)
+			if not distances.has(neighbor) or distances[neighbor] >= best_distance:
+				continue
+			if dir.x != 0 and dir.y != 0:
+				if not distances.has(cell + Vector2i(dir.x, 0)) or not distances.has(cell + Vector2i(0, dir.y)):
+					continue
+			best_distance = distances[neighbor]
+			best_step = dir
+		if best_step != Vector2i.ZERO:
+			field[cell] = best_step
 	return field
+
+
+func _draw_flow_field() -> void:
+	for cell: Vector2i in flow_field:
+		var from := cell_center(cell)
+		var to := from + Vector2(flow_field[cell]).normalized() * TILE_SIZE * 0.4
+		_debug_layer.draw_line(from, to, DEBUG_ARROW_COLOR, 1.0)
+		_debug_layer.draw_circle(to, 1.5, DEBUG_ARROW_COLOR)

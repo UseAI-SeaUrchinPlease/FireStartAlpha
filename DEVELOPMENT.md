@@ -319,8 +319,8 @@ M6 完了後、できれば実際に小学生に遊んでもらってプレイ�
 `scenes/phases/day_phase.gd` の定数を日数に応じて変化させる。
 
 ```
-CAP_BASE = 5, CAP_PER_DAY = 1, CAP_MAX = 15
-INTERVAL_BASE = 20, INTERVAL_DECAY_PER_DAY = 2, INTERVAL_MIN = 6
+CAP_BASE = 6, CAP_PER_DAY = 2, CAP_MAX = 20
+INTERVAL_BASE = 12, INTERVAL_DECAY_PER_DAY = 1.5, INTERVAL_MIN = 4
 
 MAX_CONCURRENT_ENEMIES = min(CAP_BASE + CAP_PER_DAY * (day - 1), CAP_MAX)
 SPAWN_INTERVAL = max(INTERVAL_MIN, INTERVAL_BASE - INTERVAL_DECAY_PER_DAY * (day - 1))
@@ -328,15 +328,19 @@ SPAWN_INTERVAL = max(INTERVAL_MIN, INTERVAL_BASE - INTERVAL_DECAY_PER_DAY * (day
 ```
 
 - `_spawn_enemy()` の冒頭で `enemy_count() >= MAX_CONCURRENT_ENEMIES` なら即 return する(タイマーは停止せず動かし続ける。死亡シグナルとの連動は行わない)
+- 出現位置はフローフィールドに載っているセル(プレイヤーまで歩いて行けるセル)に限る。囲まれた飛び地に湧いて止まったままになるのを防ぐ(PR #11 レビュー)
+- ゾンビの `aggro_range` は出現距離(160〜320px)をすべて含む 360px にする。180px だった頃は約9割の敵が追跡範囲外に湧き、止まったままだった(PR #11 レビュー)
 
 ### 8.2 敵の移動アルゴリズム(フローフィールド)
 
 敵ごとに経路探索すると敵数増加時に負荷が線形に増えるため、ゴール(プレイヤー)を起点にしたフローフィールドを `GameWorld` が1つだけ計算し、全敵がそれを参照する方式にする(Vampire Survivors 系の horde ゲームで標準的に使われる手法)。
 
-- `GameWorld.compute_flow_field(goal_cell, radius)` : プレイヤーのセルを起点に BFS(4方向)でコスト場を作り、各セルの最良近傍への方向ベクトルを返す
+- `GameWorld.compute_flow_field(goal_cell, radius)` : プレイヤーのセルを起点に BFS(4方向)でコスト場を作り、各セルから次に進む隣のセルへのオフセットを返す。次のセルは斜めも候補にする(4方向の距離では斜めの隣は2歩先なので、斜めに進めるときは自然に選ばれ、L字のカクカクした動きにならない)。角をかすめて引っかからないよう、斜めは両脇の2マスがどちらも通れるときだけ許す
+- 敵は「次のセルの中心」へ向かう。軸方向の単位ベクトルで進むと、列からずれたまま障害物の角に正面からぶつかって止まるため。プレイヤーと同じセルにいるときはプレイヤーへ直接向かう
 - 計算範囲は全 `EnemyData` の `aggro_range` の最大値から起動時に1回算出: `radius_tiles = ceil(max_aggro_range / TILE_SIZE) + 2`。マップ全体ではなくこの範囲に限定し、マップサイズが大きくなっても計算コストを一定に保つ
 - 再計算タイミング: `day_phase._ready()` 時点で初回計算 + プレイヤーがセルを跨いで移動する度にトリガー(ただし最短 0.2 秒のクールダウン)
-- ブロック破壊時は即時再計算せず、次回のトリガーまで反映を待つ(数百ms 程度の遅延は許容する)
+- ブロックが掘られたときも再計算をトリガーする(クールダウンは共有)
+- `GameWorld.debug_draw_flow_field` をエディタでオンにすると、各セルの向きを矢印で描く
 - フィールドに値がないセル(到達不能)にいる敵は `velocity = Vector2.ZERO`
 - 侵入不可判定は `BlockData` 側の `blocks_movement() -> bool`(デフォルト `true`)を経由する。この基底クラス化・メソッド追加は本仕様と別コミットで行うが、フローフィールド側は最初からこのメソッド名を前提に実装する
 

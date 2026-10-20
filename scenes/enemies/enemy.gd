@@ -55,8 +55,14 @@ func _compute_velocity() -> Vector2:
 	if target == null or global_position.distance_to(target.global_position) > data.aggro_range:
 		return Vector2.ZERO
 	var cell := world.cell_at(global_position)
-	var direction: Vector2 = world.flow_field.get(cell, Vector2.ZERO)
-	return direction * _speed
+	# 軸方向の単位ベクトルではなく次のセルの中心へ向かうことで、列からずれたまま
+	# 進んで障害物の角に正面からぶつかって止まるのを防ぐ (PR #11 レビュー)。
+	if world.flow_field.has(cell):
+		return global_position.direction_to(world.cell_center(cell + world.flow_field[cell])) * _speed
+	# プレイヤーと同じセル(フィールドのゴール)では直接向かう
+	if cell == world.cell_at(target.global_position):
+		return global_position.direction_to(target.global_position) * _speed
+	return Vector2.ZERO
 
 
 func take_damage(amount: int, from: Vector2) -> void:

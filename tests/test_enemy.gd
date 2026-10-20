@@ -2,6 +2,7 @@ extends Node
 
 const ENEMY_SCENE := preload("res://scenes/enemies/Enemy.tscn")
 const ZOMBIE_DATA: EnemyData = preload("res://data/enemies/zombie.tres")
+const WORLD_SCENE := preload("res://scenes/world/World.tscn")
 
 var _failures := 0
 
@@ -43,9 +44,43 @@ func _run() -> void:
 	)
 	day50.queue_free()
 
+	await _check_steering()
+
 	if _failures == 0:
 		print("test_enemy: OK")
 	get_tree().quit(1 if _failures > 0 else 0)
+
+
+## 次のセルの中心へ向かうので、列の中心からずれていれば戻る成分を持つこと。
+func _check_steering() -> void:
+	GameState.reset()
+	var world: GameWorld = WORLD_SCENE.instantiate()
+	add_child(world)
+	var map := MapData.new()
+	map.width = 10
+	map.height = 5
+	world.build(map)
+	var target := Node2D.new()
+	world.add_child(target)
+	target.global_position = world.cell_center(Vector2i(8, 2))
+	world.flow_field = world.compute_flow_field(Vector2i(8, 2), 10)
+
+	var enemy: Enemy = ENEMY_SCENE.instantiate()
+	enemy.data = ZOMBIE_DATA
+	enemy.target = target
+	enemy.world = world
+	world.add_child(enemy)
+	enemy.set_physics_process(false)
+	await get_tree().process_frame
+	enemy.global_position = world.cell_center(Vector2i(3, 2)) + Vector2(0.0, 5.0)
+	var velocity := enemy._compute_velocity()
+	_check(velocity.x > 0.0 and velocity.y < 0.0, "an enemy off its row's center steers back toward it while moving along the row (got %s)" % velocity)
+	_check(is_equal_approx(velocity.length(), enemy._speed), "steering keeps the enemy's speed")
+
+	enemy.global_position = world.cell_center(Vector2i(8, 2)) + Vector2(-6.0, 0.0)
+	velocity = enemy._compute_velocity()
+	_check(velocity.x > 0.0 and is_zero_approx(velocity.y), "in the player's own cell the enemy heads straight for the player (got %s)" % velocity)
+	world.queue_free()
 
 
 func _spawn() -> Enemy:
