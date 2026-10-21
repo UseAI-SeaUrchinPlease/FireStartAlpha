@@ -7,7 +7,7 @@
 タスクボードの運用ルール:
 
 - 着手するときは、その Issue に自分を担当者(assignee)として付ける。「今着手できる」は `is:open -is:blocked no:assignee`、「進行中」は `is:open has:assignee` で見る
-- 先行 Issue をクローズすると、後続の Issue は自動で「着手できる」側に移る。そのため、先行 Issue は後続が着手できる状態になるまでクローズしない
+- 先行 Issue をクローズすると、後続の Issue は自動で「着手できる」側に移る。作業が終わる前にクローズしない(PR は `Closes #N` でマージ時に自動でクローズされる)
 - 先行 Issue を「やらない(Not planned)」でクローズするときは、後続の Issue の Blocked by を外すか、後続の Issue もまとめてクローズする
 
 ## 操作方法
