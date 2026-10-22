@@ -40,6 +40,14 @@ jobs:
           use-dotnet: false
           include-templates: true
 
+      # テストが1本でも落ちたら公開しない(前回公開した版がそのまま残る)
+      - name: Run tests on the preview build
+        run: |
+          # 新しいチェックアウトでは1回目のインポートでフォントの読み込みエラーが出るため2回行う
+          godot --headless --path preview --import || true
+          godot --headless --path preview --import
+          GODOT=godot preview/tools/run_tests.sh
+
       - name: Export main build to the site root
         run: |
           mkdir -p build/web
@@ -49,7 +57,6 @@ jobs:
       - name: Export preview build to /preview/
         run: |
           mkdir -p build/web/preview
-          godot --headless --path preview --import
           godot --headless --path preview --export-release "Web" "$GITHUB_WORKSPACE/build/web/preview/index.html"
 
       - name: Upload Pages artifact
