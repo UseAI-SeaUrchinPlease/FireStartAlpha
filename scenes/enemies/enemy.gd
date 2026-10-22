@@ -24,6 +24,7 @@ var _damage_since_knockback := 0
 var _attack_cooldown := 0.0
 var _break_cell := Vector2i.ZERO
 var _break_progress := 0.0
+var _chasing := false
 
 @onready var _sprite: Sprite2D = %Sprite
 @onready var _hitbox: Area2D = %Hitbox
@@ -60,13 +61,24 @@ func _physics_process(delta: float) -> void:
 ## している (issue #7)。異なる動きをする敵種はこのメソッドを上書きする。
 ## ブロックを壊す敵は障害物を避けると壊す機会がなくなるため、直進させる。
 func _compute_velocity() -> Vector2:
-	if target == null or global_position.distance_to(target.global_position) > data.aggro_range:
+	if target == null:
 		return Vector2.ZERO
+	# 一度追い始めたら追い続ける。障害物を迂回する途中で直線距離が aggro_range を
+	# 超えた瞬間に止まってしまわないため。
+	if not _chasing and global_position.distance_to(target.global_position) > data.aggro_range:
+		return Vector2.ZERO
+	_chasing = true
 	if data.break_speed > 0.0:
 		return global_position.direction_to(target.global_position) * _speed
 	var cell := world.cell_at(global_position)
-	var direction: Vector2 = world.flow_field.get(cell, Vector2.ZERO)
-	return direction * _speed
+	# 軸方向の単位ベクトルではなく次のセルの中心へ向かうことで、列からずれたまま
+	# 進んで障害物の角に正面からぶつかって止まるのを防ぐ (PR #11 レビュー)。
+	if world.flow_field.has(cell):
+		return global_position.direction_to(world.cell_center(cell + world.flow_field[cell])) * _speed
+	# プレイヤーと同じセル(フィールドのゴール)では直接向かう
+	if cell == world.cell_at(target.global_position):
+		return global_position.direction_to(target.global_position) * _speed
+	return Vector2.ZERO
 
 
 func take_damage(amount: int, from: Vector2) -> void:

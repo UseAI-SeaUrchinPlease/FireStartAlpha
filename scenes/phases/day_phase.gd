@@ -4,14 +4,14 @@ const PICKUP_SCENE := preload("res://scenes/world/ItemPickup.tscn")
 const ENEMY_SCENE := preload("res://scenes/enemies/Enemy.tscn")
 const MAP_WIDTH := 96
 const MAP_HEIGHT := 64
-const INITIAL_ENEMIES := 2
-const ENEMIES_PER_DAY := 1
-const CAP_BASE := 5
-const CAP_PER_DAY := 1
-const CAP_MAX := 15
-const SPAWN_INTERVAL_BASE := 20.0
-const SPAWN_INTERVAL_DECAY_PER_DAY := 2.0
-const SPAWN_INTERVAL_MIN := 6.0
+const INITIAL_ENEMIES := 3
+const ENEMIES_PER_DAY := 2
+const CAP_BASE := 6
+const CAP_PER_DAY := 2
+const CAP_MAX := 20
+const SPAWN_INTERVAL_BASE := 12.0
+const SPAWN_INTERVAL_DECAY_PER_DAY := 1.5
+const SPAWN_INTERVAL_MIN := 4.0
 const SPAWN_MIN_DISTANCE := 160.0
 const SPAWN_MAX_DISTANCE := 320.0
 const SPAWN_ATTEMPTS := 20
@@ -32,6 +32,7 @@ var _ended := false
 var _flow_field_radius := 0
 var _flow_field_cooldown := 0.0
 var _last_flow_field_cell := Vector2i.ZERO
+var _flow_field_dirty := false
 
 @onready var _world: GameWorld = %World
 @onready var _player: Player = %Player
@@ -95,7 +96,7 @@ func _process(delta: float) -> void:
 	_daylight.color = _daylight_color(1.0 - _day_timer.time_left / day_duration)
 
 	_flow_field_cooldown = maxf(0.0, _flow_field_cooldown - delta)
-	if _flow_field_cooldown <= 0.0 and _world.cell_at(_player.global_position) != _last_flow_field_cell:
+	if _flow_field_cooldown <= 0.0 and (_flow_field_dirty or _world.cell_at(_player.global_position) != _last_flow_field_cell):
 		_recompute_flow_field()
 
 
@@ -104,6 +105,7 @@ func _recompute_flow_field() -> void:
 	_world.flow_field = _world.compute_flow_field(player_cell, _flow_field_radius)
 	_last_flow_field_cell = player_cell
 	_flow_field_cooldown = FLOW_FIELD_COOLDOWN
+	_flow_field_dirty = false
 
 
 func enemy_count() -> int:
@@ -139,8 +141,9 @@ func _spawn_enemy() -> void:
 		var cell := _world.cell_at(_player.global_position + offset)
 		if not _world.contains(cell):
 			continue
-		var block := _world.get_block(cell)
-		if block != null and block.blocks_movement():
+		# プレイヤーまで歩いて行けるセルだけに湧かせる。囲まれた飛び地に湧くと
+		# フィールドに載らず止まったままになるため (PR #11 レビュー)。
+		if not _world.flow_field.has(cell):
 			continue
 		var enemy: Enemy = ENEMY_SCENE.instantiate()
 		enemy.data = _enemy_types.pick_random()
@@ -153,6 +156,8 @@ func _spawn_enemy() -> void:
 
 func _on_block_dug(cell: Vector2i, block: BlockData) -> void:
 	Audio.play(&"break")
+	# 掘って通れるようになったマスを、次の再計算(クールダウンは共有)でフィールドに入れる
+	_flow_field_dirty = true
 	if block.drop_item == null:
 		return
 	var pickup: ItemPickup = PICKUP_SCENE.instantiate()
