@@ -1,0 +1,67 @@
+# 毎週木曜 20:30(JST)、翌日の定例に向けて、開いている PR をすべて preview/all-features に
+# 試しにマージしてテストし、結果を issue #34 にコメントする。push も公開もしない。
+# 取り込むブランチはこの結果を見て #34 で決め、実際の更新は preview ブランチの tools/update_preview.sh で行う。
+# 定期実行(schedule)はデフォルトブランチ(dev)にあるワークフローしか動かないため、ここに置いている。
+name: Weekly preview dry run
+
+on:
+  schedule:
+    - cron: "30 11 * * 4" # 木曜 20:30 JST(UTC 11:30)。GitHub の混雑で遅れることがある
+  workflow_dispatch:
+  # TEMP: PR を出す前の動作確認用。PR を出す前に消す
+  push:
+    branches: [34-parsley001-preview-dry-run]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+concurrency:
+  group: preview-dry-run
+  cancel-in-progress: false
+
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PREVIEW_ISSUE: "34"
+    steps:
+      - name: Checkout tooling
+        uses: actions/checkout@v4
+        with:
+          path: tooling
+
+      - name: Checkout preview branch
+        uses: actions/checkout@v4
+        with:
+          ref: preview/all-features
+          path: preview
+          fetch-depth: 0
+
+      - name: Setup Godot
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.7.2
+          use-dotnet: false
+          include-templates: true
+
+      - name: Trial-merge open PRs and run tests
+        working-directory: preview
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          {
+            if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
+              echo "> 定期実行ではなく、手動(またはテスト)で実行した結果です。"
+              echo
+            fi
+            GODOT=godot "$GITHUB_WORKSPACE/tooling/tools/preview_dry_run.sh"
+            echo
+            echo "[実行ログ]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)"
+          } > "$RUNNER_TEMP/report.md"
+          cat "$RUNNER_TEMP/report.md"
+
+      - name: Comment on the tracking issue
+        run: gh issue comment "$PREVIEW_ISSUE" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/report.md"
