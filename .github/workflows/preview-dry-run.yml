@@ -8,9 +8,6 @@ on:
   schedule:
     - cron: "30 11 * * 4" # 木曜 20:30 JST(UTC 11:30)。GitHub の混雑で遅れることがある
   workflow_dispatch:
-  # TEMP: PR を出す前の動作確認用。PR を出す前に消す
-  push:
-    branches: [34-parsley001-preview-dry-run]
 
 permissions:
   contents: read
