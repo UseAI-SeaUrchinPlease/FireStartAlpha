@@ -1,8 +1,7 @@
 class_name GameWorld
 extends Node2D
 
-signal block_dug(cell: Vector2i, block: BlockData)
-
+const PICKUP_SCENE := preload("res://scenes/world/ItemPickup.tscn")
 const TILE_SIZE := 16
 const GROUND_ATLAS: Dictionary[StringName, Vector2i] = {
 	&"grass_floor": Vector2i(0, 0),
@@ -44,7 +43,13 @@ func dig(cell: Vector2i) -> void:
 		return
 	map.cells.erase(cell)
 	_blocks.erase_cell(cell)
-	block_dug.emit(cell, block)
+	Audio.play(&"break")
+	if block.drop_item != null:
+		var pickup: ItemPickup = PICKUP_SCENE.instantiate()
+		pickup.item = block.drop_item
+		pickup.count = block.drop_count
+		pickup.position = cell_center(cell)
+		add_child(pickup)
 
 
 func contains(cell: Vector2i) -> bool:

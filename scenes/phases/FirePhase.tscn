@@ -22,6 +22,7 @@ bg_color = Color(1, 0.55, 0.15, 1)
 script = ExtResource("1_script")
 
 [node name="UI" type="CanvasLayer" parent="."]
+layer = 2
 
 [node name="Root" type="Control" parent="UI"]
 anchors_preset = 15
@@ -114,6 +115,10 @@ role = 2
 unique_name_in_owner = true
 role = 3
 
+[node name="BackLabel" type="Label" parent="UI/Root/Layout/Slots"]
+unique_name_in_owner = true
+text = "戻る"
+
 [node name="PredictLabel" type="Label" parent="UI/Root/Layout"]
 unique_name_in_owner = true
 text = "予想 0°"
@@ -129,6 +134,7 @@ max_value = 100.0
 show_percentage = false
 
 [node name="HintLabel" type="Label" parent="UI/Root/Layout"]
+unique_name_in_owner = true
 text = "← →  えらぶ      ↑ ↓  かずをかえる      E  火をつける"
 horizontal_alignment = 1
 

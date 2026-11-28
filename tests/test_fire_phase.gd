@@ -29,6 +29,23 @@ func _run() -> void:
 	outcome = await _ignite(FIRE_PHASE.instantiate())
 	_check(outcome == "failed", "fuel alone cannot light the fire and fails the phase")
 
+	var phase: FirePhase = FIRE_PHASE.instantiate()
+	phase.can_cancel = true
+	var cancelled := [false]
+	phase.cancelled.connect(func() -> void: cancelled[0] = true)
+	add_child(phase)
+	phase.cancel()
+	_check(cancelled[0], "an ignition opened during the day can go back")
+	phase.queue_free()
+
+	phase = FIRE_PHASE.instantiate()
+	cancelled[0] = false
+	phase.cancelled.connect(func() -> void: cancelled[0] = true)
+	add_child(phase)
+	phase.cancel()
+	_check(not cancelled[0], "an ignition forced by sunset cannot go back")
+	phase.queue_free()
+
 	if _failures == 0:
 		print("test_fire_phase: OK")
 	get_tree().quit(1 if _failures > 0 else 0)

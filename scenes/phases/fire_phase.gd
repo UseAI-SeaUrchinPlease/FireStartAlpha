@@ -1,9 +1,14 @@
+class_name FirePhase
 extends GamePhase
+
+signal cancelled
 
 const RESULT_DELAY := 2.0
 const FLAME_PER_DEGREE := 0.4
 const FLAME_MIN := 24
 const FLAME_MAX := 140
+
+var can_cancel := false
 
 var _slots: Array[FireSlot] = []
 var _focus := 0
@@ -18,6 +23,8 @@ var _resolved := false
 @onready var _fuel_slot: FireSlot = %FuelSlot
 @onready var _tinder_slot: FireSlot = %TinderSlot
 @onready var _igniter_slot: FireSlot = %IgniterSlot
+@onready var _back_label: Label = %BackLabel
+@onready var _hint_label: Label = %HintLabel
 
 
 func _ready() -> void:
@@ -25,7 +32,10 @@ func _ready() -> void:
 	for slot in _slots:
 		var item := _find_item(slot.role)
 		slot.setup(item, GameState.inventory.get(item, 0) if item else 0)
-	_title_label.text = "%d日目の夜   目標 %d°" % [GameState.day, GameState.target_temperature()]
+	_title_label.text = "%d日目   着火   足切り %d°" % [GameState.day, GameState.target_temperature()]
+	_back_label.visible = can_cancel
+	if can_cancel:
+		_hint_label.text += "\n戻る を選んで E  昼に戻る"
 	_temp_gauge.max_value = GameState.target_temperature()
 	_set_focus(0)
 	_refresh_prediction()
@@ -40,6 +50,15 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("move_left"):
 		_set_focus(_focus - 1)
 		Audio.play(&"menu_move")
+	elif event.is_action_pressed("interact"):
+		# The day resumes inside cancel(); without this the same press reopens the ignition screen.
+		get_viewport().set_input_as_handled()
+		if _focus == _slots.size():
+			cancel()
+		else:
+			ignite()
+	elif _focus == _slots.size():
+		return
 	elif event.is_action_pressed("move_up"):
 		_slots[_focus].change_count(1)
 		_refresh_prediction()
@@ -48,8 +67,14 @@ func _unhandled_input(event: InputEvent) -> void:
 		_slots[_focus].change_count(-1)
 		_refresh_prediction()
 		Audio.play(&"menu_move")
-	elif event.is_action_pressed("interact"):
-		ignite()
+
+
+func cancel() -> void:
+	if _resolved or not can_cancel:
+		return
+	_resolved = true
+	Audio.play(&"menu_select")
+	cancelled.emit()
 
 
 func ignite() -> void:
@@ -78,9 +103,11 @@ func ignite() -> void:
 
 
 func _set_focus(index: int) -> void:
-	_focus = wrapi(index, 0, _slots.size())
+	var targets := _slots.size() + (1 if can_cancel else 0)
+	_focus = wrapi(index, 0, targets)
 	for i in _slots.size():
 		_slots[i].focused = i == _focus
+	_back_label.modulate = FireSlot.FOCUSED_COLOR if _focus == _slots.size() else Color.WHITE
 
 
 func _find_item(role: ItemData.FireRole) -> ItemData:

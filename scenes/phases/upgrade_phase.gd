@@ -13,7 +13,7 @@ var _focus := 0
 
 
 func _ready() -> void:
-	_title_label.text = "%d日目の夜   強化" % GameState.day
+	_title_label.text = "%d日目の夜   自強化" % GameState.day
 	for resource in DataDir.load_all("res://data/upgrades"):
 		_upgrades.append(resource as UpgradeData)
 	for i in _upgrades.size() + 1:
@@ -70,5 +70,5 @@ func _refresh() -> void:
 		_rows[i].set_texts(upgrade.display_name, detail, cost)
 		_rows[i].available = GameState.can_buy(upgrade)
 	var next_row := _rows[_upgrades.size()]
-	next_row.set_texts("次の日へ", "", "")
+	next_row.set_texts("夜を明かす", "", "")
 	next_row.available = true
