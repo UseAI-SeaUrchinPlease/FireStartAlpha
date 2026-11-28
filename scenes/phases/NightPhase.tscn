@@ -1,0 +1,53 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/phases/night_phase.gd" id="1_script"]
+
+[node name="NightPhase" type="Node"]
+process_physics_priority = 1
+script = ExtResource("1_script")
+
+[node name="Darkness" type="CanvasModulate" parent="."]
+color = Color(0.3, 0.28, 0.45, 1)
+
+[node name="Barrier" type="Node2D" parent="."]
+unique_name_in_owner = true
+
+[node name="Campfire" type="ColorRect" parent="Barrier"]
+offset_left = -6.0
+offset_top = -6.0
+offset_right = 6.0
+offset_bottom = 6.0
+color = Color(1, 0.45, 0.1, 1)
+
+[node name="CampfireLabel" type="Label" parent="Barrier"]
+offset_left = -16.0
+offset_top = 6.0
+offset_right = 16.0
+offset_bottom = 22.0
+theme_override_font_sizes/font_size = 8
+text = "焚火"
+horizontal_alignment = 1
+
+[node name="NightTimer" type="Timer" parent="."]
+unique_name_in_owner = true
+one_shot = true
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="TimeLabel" type="Label" parent="HUD"]
+unique_name_in_owner = true
+offset_left = 220.0
+offset_top = 6.0
+offset_right = 420.0
+offset_bottom = 40.0
+theme_override_font_sizes/font_size = 24
+text = "夜明けまで 60"
+horizontal_alignment = 1
+
+[node name="HPLabel" type="Label" parent="HUD"]
+unique_name_in_owner = true
+offset_left = 8.0
+offset_top = 28.0
+offset_right = 200.0
+offset_bottom = 52.0
+text = "HP 10 / 10"
