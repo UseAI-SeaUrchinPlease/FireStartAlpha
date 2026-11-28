@@ -10,7 +10,7 @@ region = Rect2(8, 0, 8, 8)
 [resource]
 script = ExtResource("1_script")
 id = &"dry_grass"
-display_name = "枯れ草"
+display_name = "陽だまりの枯れ枝"
 icon = SubResource("AtlasTexture_icon")
 fire_role = 2
 heat = 10.0

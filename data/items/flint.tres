@@ -10,7 +10,7 @@ region = Rect2(16, 0, 8, 8)
 [resource]
 script = ExtResource("1_script")
 id = &"flint"
-display_name = "火打石"
+display_name = "星屑の火打石"
 icon = SubResource("AtlasTexture_icon")
 fire_role = 3
 heat = 20.0
