@@ -3,6 +3,7 @@ extends GamePhase
 
 signal cancelled
 
+const SLOT_SCENE := preload("res://scenes/ui/FireSlot.tscn")
 const RESULT_DELAY := 2.0
 const FLAME_PER_DEGREE := 0.4
 const FLAME_MIN := 24
@@ -20,18 +21,18 @@ var _resolved := false
 @onready var _result_label: Label = %ResultLabel
 @onready var _flame: CPUParticles2D = %Flame
 @onready var _smoke: CPUParticles2D = %Smoke
-@onready var _fuel_slot: FireSlot = %FuelSlot
-@onready var _tinder_slot: FireSlot = %TinderSlot
-@onready var _igniter_slot: FireSlot = %IgniterSlot
+@onready var _slots_grid: GridContainer = %Slots
 @onready var _back_label: Label = %BackLabel
 @onready var _hint_label: Label = %HintLabel
 
 
 func _ready() -> void:
-	_slots = [_fuel_slot, _tinder_slot, _igniter_slot]
-	for slot in _slots:
-		var item := _find_item(slot.role)
-		slot.setup(item, GameState.inventory.get(item, 0) if item else 0)
+	for item in _fire_items():
+		var slot: FireSlot = SLOT_SCENE.instantiate()
+		_slots_grid.add_child(slot)
+		_slots_grid.move_child(slot, _slots.size())
+		slot.setup(item, GameState.inventory[item])
+		_slots.append(slot)
 	_title_label.text = "%d日目   着火   足切り %d°" % [GameState.day, GameState.target_temperature()]
 	_back_label.visible = can_cancel
 	if can_cancel:
@@ -39,6 +40,9 @@ func _ready() -> void:
 	_temp_gauge.max_value = GameState.target_temperature()
 	_set_focus(0)
 	_refresh_prediction()
+	# Every slot starts full, so this is the hottest fire the player can make.
+	if not can_cancel and FireCalculator.temperature(_contributions()) < GameState.target_temperature():
+		_resolve_failure("全部入れても足りない…")
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -59,11 +63,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			ignite()
 	elif _focus == _slots.size():
 		return
-	elif event.is_action_pressed("move_up"):
+	elif event.is_action_pressed("move_up", true):
 		_slots[_focus].change_count(1)
 		_refresh_prediction()
 		Audio.play(&"menu_move")
-	elif event.is_action_pressed("move_down"):
+	elif event.is_action_pressed("move_down", true):
 		_slots[_focus].change_count(-1)
 		_refresh_prediction()
 		Audio.play(&"menu_move")
@@ -80,26 +84,32 @@ func cancel() -> void:
 func ignite() -> void:
 	if _resolved:
 		return
-	_resolved = true
 	var contributions := _contributions()
 	var temperature := FireCalculator.temperature(contributions)
 	var target := GameState.target_temperature()
+	if temperature < target:
+		_result_label.text = "足切り温度に届いていない  %d° / %d°" % [temperature, target]
+		Audio.play(&"menu_move")
+		return
+	_resolved = true
 	for item: ItemData in contributions:
 		GameState.remove_item(item, contributions[item])
-	if temperature >= target:
-		GameState.fire_points = FireCalculator.reward_points(temperature, target)
-		_result_label.text = "火がついた！  %d°   +%d ポイント" % [temperature, GameState.fire_points]
-		_flame.amount = clampi(int(temperature * FLAME_PER_DEGREE), FLAME_MIN, FLAME_MAX)
-		_flame.emitting = true
-		Audio.play(&"fire_success")
-		await get_tree().create_timer(RESULT_DELAY).timeout
-		finish()
-	else:
-		_result_label.text = "火がつかなかった…  %d° / %d°" % [temperature, target]
-		_smoke.restart()
-		Audio.play(&"fire_fail")
-		await get_tree().create_timer(RESULT_DELAY).timeout
-		fail()
+	GameState.fire_points = FireCalculator.reward_points(temperature, target)
+	_result_label.text = "火がついた！  %d°   +%d ポイント" % [temperature, GameState.fire_points]
+	_flame.amount = clampi(int(temperature * FLAME_PER_DEGREE), FLAME_MIN, FLAME_MAX)
+	_flame.emitting = true
+	Audio.play(&"fire_success")
+	await get_tree().create_timer(RESULT_DELAY).timeout
+	finish()
+
+
+func _resolve_failure(message: String) -> void:
+	_resolved = true
+	_result_label.text = message
+	_smoke.restart()
+	Audio.play(&"fire_fail")
+	await get_tree().create_timer(RESULT_DELAY).timeout
+	fail()
 
 
 func _set_focus(index: int) -> void:
@@ -110,11 +120,13 @@ func _set_focus(index: int) -> void:
 	_back_label.modulate = FireSlot.FOCUSED_COLOR if _focus == _slots.size() else Color.WHITE
 
 
-func _find_item(role: ItemData.FireRole) -> ItemData:
+func _fire_items() -> Array[ItemData]:
+	var items: Array[ItemData] = []
 	for item: ItemData in GameState.inventory:
-		if item.fire_role == role and GameState.inventory[item] > 0:
-			return item
-	return null
+		if item.fire_role != ItemData.FireRole.NONE and GameState.inventory[item] > 0:
+			items.append(item)
+	items.sort_custom(func(a: ItemData, b: ItemData) -> bool: return a.fire_role < b.fire_role)
+	return items
 
 
 func _contributions() -> Dictionary[ItemData, int]:
@@ -126,6 +138,7 @@ func _contributions() -> Dictionary[ItemData, int]:
 
 
 func _refresh_prediction() -> void:
+	_result_label.text = ""
 	var predicted := FireCalculator.temperature(_contributions())
 	_predict_label.text = "予想 %d°" % predicted
 	_temp_gauge.value = predicted

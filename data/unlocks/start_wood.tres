@@ -7,7 +7,7 @@
 script = ExtResource("1_script")
 id = &"start_wood"
 display_name = "薪のたくわえ"
-description = "はじめから 薪 x2 を持っている"
+description = "はじめから 灰被りの薪 x2 を持っている"
 cost = 5
 start_item = ExtResource("2_item")
 start_item_count = 2
